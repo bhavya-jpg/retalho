@@ -1,0 +1,1 @@
+{"type":"FeatureCollection","features":[{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-8.30,41.43],[-8.28,41.43],[-8.28,41.45],[-8.30,41.45],[-8.30,41.43]]]},"properties":{"name":"Test square","source_type":"synthetic"}}]}

@@ -1,0 +1,3 @@
+{"type":"FeatureCollection","features":[
+ {"type":"Feature","geometry":{"type":"Point","coordinates":[-8.285,41.445]},"properties":{"id":"CAND-1","site_type":"ecoponto","source_type":"synthetic"}}
+]}

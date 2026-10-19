@@ -1,0 +1,4 @@
+{"type":"FeatureCollection","features":[
+ {"type":"Feature","geometry":{"type":"Point","coordinates":[-8.29,41.44]},"properties":{"id":"DP-NEGPOP","population":-3,"source_type":"synthetic"}},
+ {"type":"Feature","geometry":{"type":"Point","coordinates":[-8.29,41.44]},"properties":{"id":"DP-OK","population":10,"source_type":"synthetic"}}
+]}

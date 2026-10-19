@@ -1,0 +1,4 @@
+{"type":"FeatureCollection","features":[
+ {"type":"Feature","geometry":{"type":"Point","coordinates":[-8.291,41.441]},"properties":{"id":"DP-1","population":120,"source_type":"synthetic"}},
+ {"type":"Feature","geometry":{"type":"Point","coordinates":[-8.282,41.432]},"properties":{"id":"DP-2","population":0,"source_type":"synthetic"}}
+]}

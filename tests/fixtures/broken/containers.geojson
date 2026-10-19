@@ -1,0 +1,8 @@
+{"type":"FeatureCollection","features":[
+ {"type":"Feature","geometry":{"type":"Point","coordinates":[-8.29,41.44]},"properties":{"id":"TX-1","kind":"existing","capacity_kg":300,"site_type":"ecoponto","source_type":"synthetic"}},
+ {"type":"Feature","geometry":{"type":"Point","coordinates":[-8.29,41.44]},"properties":{"id":"TX-1","kind":"existing","capacity_kg":300,"site_type":"ecoponto","source_type":"synthetic"}},
+ {"type":"Feature","geometry":{"type":"Point","coordinates":[-8.40,41.44]},"properties":{"id":"TX-OUTSIDE","kind":"existing","capacity_kg":300,"site_type":"ecoponto","source_type":"synthetic"}},
+ {"type":"Feature","geometry":{"type":"Point","coordinates":[-8.29,41.44]},"properties":{"id":"TX-NEGCAP","kind":"existing","capacity_kg":-50,"site_type":"ecoponto","source_type":"synthetic"}},
+ {"type":"Feature","geometry":{"type":"Point","coordinates":[-8.29,41.44]},"properties":{"id":"TX-NOSOURCE","kind":"existing","capacity_kg":300,"site_type":"ecoponto"}},
+ {"type":"Feature","geometry":{"type":"Point","coordinates":[-8.29,41.44]},"properties":{"id":"TX-BADSITE","kind":"existing","capacity_kg":300,"site_type":"bin","source_type":"synthetic"}}
+]}
