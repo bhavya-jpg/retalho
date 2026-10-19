@@ -28,3 +28,4 @@ out/simulation.json
 out/breakeven.json
 out/coverage.json
 web/dist-offline/
+web/*.tsbuildinfo
