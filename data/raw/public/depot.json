@@ -1,0 +1,7 @@
+{
+ "id": "DEPOT",
+ "name": "Assumed depot (not VITRUS's; replace)",
+ "lat": 41.421,
+ "lon": -8.315,
+ "source_type": "synthetic"
+}

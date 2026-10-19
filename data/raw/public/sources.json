@@ -1,0 +1,13 @@
+{
+ "ine": {
+  "name": "INE, Censos 2021, Base Geogr\u00e1fica de Referencia\u00e7\u00e3o de Informa\u00e7\u00e3o (BGRI2021)",
+  "licence": "INE open data; reuse with source citation",
+  "url": "https://mapas.ine.pt/download/index2021.phtml"
+ },
+ "osm": {
+  "name": "OpenStreetMap contributors, via Geofabrik",
+  "licence": "ODbL 1.0",
+  "url": "https://www.openstreetmap.org/copyright",
+  "extract": "portugal-261018"
+ }
+}
