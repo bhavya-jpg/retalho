@@ -1,0 +1,108 @@
+@import "tailwindcss";
+
+/* Design tokens. Chart/series values follow the validated dataviz reference palette
+   (A = slot 1 blue, B = slot 2 orange; checked with validate_palette.js in both modes). */
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --surface-2: #f0efec;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #6f6d68;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11, 11, 11, 0.1);
+  --series-a: #2a78d6;
+  --series-b: #eb6834;
+  --candidate: #898781;
+  --good-text: #006300;
+  --warn-bg: #fff4d6;
+  --warn-ink: #6b4a00;
+  --critical: #d03b3b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --surface-2: #262624;
+    --ink: #f0efec;
+    --ink-2: #c3c2b7;
+    --muted: #9c9a93;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255, 255, 255, 0.1);
+    --series-a: #3987e5;
+    --series-b: #d95926;
+    --candidate: #898781;
+    --good-text: #0ca30c;
+    --warn-bg: #3a2e10;
+    --warn-ink: #f5d28a;
+    --critical: #e66767;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d;
+  --surface: #1a1a19;
+  --surface-2: #262624;
+  --ink: #f0efec;
+  --ink-2: #c3c2b7;
+  --muted: #9c9a93;
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --border: rgba(255, 255, 255, 0.1);
+  --series-a: #3987e5;
+  --series-b: #d95926;
+  --candidate: #898781;
+  --good-text: #0ca30c;
+  --warn-bg: #3a2e10;
+  --warn-ink: #f5d28a;
+  --critical: #e66767;
+}
+
+@theme inline {
+  --color-page: var(--page);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-grid: var(--grid);
+  --color-line: var(--border);
+  --color-series-a: var(--series-a);
+  --color-series-b: var(--series-b);
+  --color-warn-bg: var(--warn-bg);
+  --color-warn-ink: var(--warn-ink);
+  --color-good: var(--good-text);
+  --color-critical: var(--critical);
+  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+body {
+  background: var(--page);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Leaflet: keep the map legible when tiles are missing, and theme popups. */
+.leaflet-container {
+  background: #f0efec; /* light paper in both themes, also when tiles are offline */
+  font-family: var(--font-sans);
+}
+.leaflet-tooltip {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--border);
+  box-shadow: none;
+}
+
+input[type="range"] {
+  accent-color: var(--series-a);
+}
