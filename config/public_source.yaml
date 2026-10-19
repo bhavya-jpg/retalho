@@ -1,0 +1,19 @@
+# Settings for the PUBLIC dataset builder (pipeline/public_data.py): OpenStreetMap + INE Census 2021.
+
+municipality_code: "0308"            # INE DTMN code for Guimarães
+bgri_url: https://mapas.ine.pt/download/filesGPG/2021/municipios/BGRI2021_0308.zip
+osm_extract: portugal-261018         # Geofabrik snapshot (cache/osm/<name>.osm.pbf)
+
+# OSM recycling features whose recycling_type is in this list are never candidate sites
+# (reverse-vending machines sit inside shops; recycling centres are a different service).
+exclude_recycling_types: [reverse_vending_machine, centre]
+
+# Two features closer than this are treated as the same site.
+dedupe_m: 15
+
+# Boundary simplification tolerance (metres, EPSG:3763) to keep results.json small.
+boundary_simplify_m: 10
+
+# No public source gives VITRUS's depot. This is an ASSUMED location, labelled synthetic,
+# until VITRUS provides the real one.
+depot: {name: "Assumed depot (not VITRUS's; replace)", lat: 41.4210, lon: -8.3150}
