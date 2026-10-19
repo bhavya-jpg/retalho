@@ -1,0 +1,46 @@
+# Settings for the SYNTHETIC dataset generator (pipeline/synthetic.py).
+#
+# Synthetic data exists so the pipeline and UI can be built and tested before
+# sponsor or public data arrive. None of it describes real containers or real
+# residents, and every generated record carries source_type: synthetic.
+
+seed: 2035
+
+# Rough centre of Guimarães city (WGS84). Used only to place synthetic points.
+city_centre: {lat: 41.4425, lon: -8.2918}
+
+# Approximate municipality outline (lon, lat), hand-drawn and much coarser than
+# the real boundary. Replace with the DGT CAOP polygon (data/raw/<source>/boundary.geojson).
+approx_boundary:
+  - [-8.405, 41.430]
+  - [-8.385, 41.490]
+  - [-8.345, 41.535]
+  - [-8.280, 41.552]
+  - [-8.215, 41.530]
+  - [-8.175, 41.480]
+  - [-8.185, 41.405]
+  - [-8.230, 41.370]
+  - [-8.300, 41.360]
+  - [-8.370, 41.385]
+
+# Synthetic depot location. Not VITRUS's depot; replace with the real one.
+depot: {name: Synthetic depot, lat: 41.4210, lon: -8.3150}
+
+counts:
+  containers: 30     # existing textile points
+  candidates: 60     # sites where a new textile point could go
+  demand_points: 400 # population-weighted points
+
+# Share of points drawn from the urban cluster around city_centre; the rest are
+# spread uniformly over the boundary.
+urban_share: 0.65
+urban_sigma_km: 1.8
+
+# Synthetic demand points are scaled to this total. Approximate population of
+# Guimarães (INE Census 2021, about 156 thousand); verify against INE before
+# quoting it.
+total_population: 156000
+
+site_type_weights:
+  containers: {ecoponto: 0.6, standalone: 0.3, other: 0.1}
+  candidates: {ecoponto: 0.8, standalone: 0.2, other: 0.0}
