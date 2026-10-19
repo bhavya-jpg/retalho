@@ -1,0 +1,29 @@
+{
+  "description": "Hand-computed cost-model checks. pipeline/cost.py and the web app's cost function must both reproduce `expected` (to 1e-9). Formula: total = km*cost_per_km + crew_h*crew_cost_per_h + truck_days*fixed_cost_per_truck_day; per_tonne = total / (kg/1000).",
+  "vectors": [
+    {
+      "name": "simple round numbers",
+      "input": {"km": 100, "crew_h": 10, "truck_days": 2, "kg": 4000},
+      "params": {"cost_per_km": 0.6, "crew_cost_per_h": 30, "fixed_cost_per_truck_day": 50},
+      "expected": {"km_cost": 60, "crew_cost": 300, "fixed_cost": 100, "total": 460, "per_tonne": 115}
+    },
+    {
+      "name": "fractional inputs",
+      "input": {"km": 431.25, "crew_h": 23.5, "truck_days": 7, "kg": 12500},
+      "params": {"cost_per_km": 0.8, "crew_cost_per_h": 42, "fixed_cost_per_truck_day": 35},
+      "expected": {"km_cost": 345, "crew_cost": 987, "fixed_cost": 245, "total": 1577, "per_tonne": 126.16}
+    },
+    {
+      "name": "no fixed cost",
+      "input": {"km": 250, "crew_h": 12.25, "truck_days": 4, "kg": 5000},
+      "params": {"cost_per_km": 1.0, "crew_cost_per_h": 20, "fixed_cost_per_truck_day": 0},
+      "expected": {"km_cost": 250, "crew_cost": 245, "fixed_cost": 0, "total": 495, "per_tonne": 99}
+    },
+    {
+      "name": "nothing collected: cost per tonne undefined",
+      "input": {"km": 0, "crew_h": 0, "truck_days": 0, "kg": 0},
+      "params": {"cost_per_km": 0.6, "crew_cost_per_h": 30, "fixed_cost_per_truck_day": 50},
+      "expected": {"km_cost": 0, "crew_cost": 0, "fixed_cost": 0, "total": 0, "per_tonne": null}
+    }
+  ]
+}

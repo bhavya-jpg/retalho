@@ -1,0 +1,17 @@
+{
+ "default": "public",
+ "datasets": [
+  {
+   "source": "public",
+   "label": "Public data (OpenStreetMap + INE Census 2021)",
+   "file": "results-public.json",
+   "generated_at": "2026-10-19T22:17:13+00:00"
+  },
+  {
+   "source": "synthetic",
+   "label": "Synthetic demo data",
+   "file": "results-synthetic.json",
+   "generated_at": "2026-10-19T22:16:55+00:00"
+  }
+ ]
+}
