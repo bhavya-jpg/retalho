@@ -1,0 +1,27 @@
+[project]
+name = "retalho"
+version = "0.1.0"
+description = "Textile-waste collection planning for Guimarães (Hack4Guimarães 2035, Challenge 5: TexVitrus)"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "numpy>=2.0",
+    "shapely>=2.0",
+    "pyyaml>=6.0",
+    "pyvroom>=1.15,<1.16",
+    "spopt>=0.8",
+    "pulp>=2.8",
+    "jsonschema>=4.23",
+    "geopandas>=1.0",
+    "pyproj>=3.6",
+]
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
