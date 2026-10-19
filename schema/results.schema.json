@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://retalho.local/results.schema.json",
+  "title": "Retalho results.json (PLAN.md §4.3)",
+  "description": "The only interface between the Python pipeline and the web app. Euro costs are NOT stored; the app computes them from km, hours and truck-days with the assumptions.",
+  "type": "object",
+  "required": ["meta", "assumptions", "network", "coverage", "scenarios", "breakeven", "benchmarks"],
+  "additionalProperties": false,
+  "$defs": {
+    "range": {
+      "type": "object", "required": ["min", "median", "max"], "additionalProperties": false,
+      "properties": {"min": {"type": "number"}, "median": {"type": "number"}, "max": {"type": "number"}}
+    },
+    "rangeOrNull": {"oneOf": [{"$ref": "#/$defs/range"}, {"type": "null"}]},
+    "sourceType": {"enum": ["sponsor", "public", "synthetic"]},
+    "pointCollection": {
+      "type": "object", "required": ["type", "features"],
+      "properties": {
+        "type": {"const": "FeatureCollection"},
+        "features": {"type": "array", "items": {
+          "type": "object", "required": ["type", "geometry", "properties"],
+          "properties": {
+            "geometry": {"type": "object", "required": ["type", "coordinates"],
+                         "properties": {"type": {"const": "Point"},
+                                        "coordinates": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2}}},
+            "properties": {"type": "object", "required": ["id", "source_type"],
+                           "properties": {"id": {"type": "string"}, "source_type": {"$ref": "#/$defs/sourceType"}}}
+          }
+        }}
+      }
+    },
+    "totals": {
+      "type": "object",
+      "required": ["km", "travel_h", "service_h", "crew_h", "kg", "stops", "truck_days", "overflow_container_days", "end_backlog_kg"],
+      "properties": {
+        "km": {"type": "number", "minimum": 0}, "travel_h": {"type": "number", "minimum": 0},
+        "service_h": {"type": "number", "minimum": 0}, "crew_h": {"type": "number", "minimum": 0},
+        "kg": {"type": "number", "minimum": 0}, "stops": {"type": "number", "minimum": 0},
+        "truck_days": {"type": "number", "minimum": 0}, "overflow_container_days": {"type": "number", "minimum": 0},
+        "end_backlog_kg": {"type": "number", "minimum": 0}, "generated_kg": {"type": "number", "minimum": 0}
+      }
+    },
+    "week": {
+      "type": "object",
+      "required": ["week", "stops", "km", "travel_h", "service_h", "crew_h", "kg", "truck_days", "overflow_container_days", "routes"],
+      "properties": {
+        "week": {"type": "integer", "minimum": 1},
+        "routes": {"type": "array", "items": {
+          "type": "object", "required": ["truck", "stop_ids", "km", "travel_h", "kg"],
+          "properties": {"truck": {"type": "integer"}, "stop_ids": {"type": "array", "items": {"type": "string"}},
+                         "km": {"type": "number"}, "travel_h": {"type": "number"}, "kg": {"type": "number"}}
+        }}
+      }
+    },
+    "scenario": {
+      "type": "object", "required": ["per_seed", "summary"],
+      "properties": {
+        "per_seed": {"type": "array", "minItems": 1, "items": {
+          "type": "object", "required": ["seed", "inputs", "weeks", "totals"],
+          "properties": {"seed": {"type": "integer"}, "inputs": {"type": "string"},
+                         "weeks": {"type": "array", "items": {"$ref": "#/$defs/week"}},
+                         "totals": {"$ref": "#/$defs/totals"}}
+        }},
+        "summary": {"type": "object", "additionalProperties": {"$ref": "#/$defs/range"},
+                    "required": ["km", "crew_h", "kg", "stops", "truck_days", "overflow_container_days", "end_backlog_kg"]}
+      }
+    },
+    "physical": {
+      "type": "object", "required": ["km", "crew_h", "truck_days", "kg"],
+      "properties": {"km": {"type": "number"}, "crew_h": {"type": "number"}, "truck_days": {"type": "number"}, "kg": {"type": "number"}}
+    }
+  },
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": ["generated_at", "git_commit", "label", "data_source", "distance_provider", "distance_label",
+                   "data_sources", "seeds", "horizon_weeks", "threshold_T"],
+      "properties": {
+        "generated_at": {"type": "string"},
+        "git_commit": {"type": "string"},
+        "label": {"type": "string"},
+        "data_source": {"type": "string"},
+        "distance_provider": {"enum": ["osrm", "approx"]},
+        "distance_label": {"type": "string"},
+        "data_sources": {"type": "array", "items": {
+          "type": "object", "required": ["name", "source_type", "licence", "url"],
+          "properties": {"name": {"type": "string"}, "source_type": {"$ref": "#/$defs/sourceType"},
+                         "licence": {"type": "string"}, "url": {"type": ["string", "null"]}}
+        }},
+        "seeds": {"type": "array", "items": {"type": "integer"}, "minItems": 1},
+        "horizon_weeks": {"type": "integer", "minimum": 1},
+        "threshold_T": {"type": "number"}
+      }
+    },
+    "assumptions": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "required": ["key", "value", "unit", "source_type", "note"], "additionalProperties": false,
+        "properties": {"key": {"type": "string"}, "value": {}, "unit": {"type": "string"},
+                       "source_type": {"enum": ["sponsor", "public", "assumption"]}, "note": {"type": "string"}}
+      }
+    },
+    "network": {
+      "type": "object", "required": ["containers", "candidates", "depot", "boundary"],
+      "properties": {
+        "containers": {"$ref": "#/$defs/pointCollection"},
+        "candidates": {"$ref": "#/$defs/pointCollection"},
+        "depot": {"type": "object", "required": ["id", "name", "lat", "lon", "source_type"],
+                  "properties": {"lat": {"type": "number"}, "lon": {"type": "number"}, "source_type": {"$ref": "#/$defs/sourceType"}}},
+        "boundary": {"type": "object", "required": ["type", "features"]}
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "required": ["label", "distance", "radius_m", "population_total", "existing", "all_candidates", "additions"],
+      "properties": {
+        "distance": {"enum": ["straight_line", "walking_route"]},
+        "radius_m": {"type": "number", "exclusiveMinimum": 0},
+        "population_total": {"type": "number", "minimum": 0},
+        "existing": {"type": "object", "required": ["sites", "covered_pop", "share"]},
+        "additions": {"type": "array", "minItems": 1, "items": {
+          "type": "object", "required": ["n_new", "site_ids", "covered_pop", "share", "marginal_share"],
+          "properties": {"n_new": {"type": "integer", "minimum": 0}, "site_ids": {"type": "array", "items": {"type": "string"}},
+                         "share": {"type": "number", "minimum": 0, "maximum": 1}, "marginal_share": {"type": "number", "minimum": 0}}
+        }}
+      }
+    },
+    "scenarios": {
+      "type": "object", "minProperties": 1,
+      "additionalProperties": {"type": "object", "required": ["A", "B"],
+                               "properties": {"A": {"$ref": "#/$defs/scenario"}, "B": {"$ref": "#/$defs/scenario"}}}
+    },
+    "breakeven": {
+      "type": "object", "required": ["points", "monotonicity_violations", "cost_params"],
+      "properties": {
+        "points": {"type": "array", "minItems": 6, "items": {
+          "type": "object", "required": ["mean_weekly_fill", "saving_km_pct", "saving_cost_pct", "per_seed"],
+          "properties": {
+            "mean_weekly_fill": {"type": "number"},
+            "saving_km_pct": {"$ref": "#/$defs/rangeOrNull"},
+            "saving_cost_pct": {"$ref": "#/$defs/rangeOrNull"},
+            "per_seed": {"type": "array", "items": {"type": "object", "required": ["seed", "A", "B"],
+                         "properties": {"A": {"$ref": "#/$defs/physical"}, "B": {"$ref": "#/$defs/physical"}}}}
+          }
+        }}
+      }
+    },
+    "benchmarks": {
+      "type": "array",
+      "items": {"type": "object", "required": ["name", "metric", "value", "unit", "source_url"],
+                "properties": {"source_url": {"type": "string", "pattern": "^https?://"}}}
+    }
+  }
+}

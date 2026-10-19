@@ -1,0 +1,13 @@
+# Published external results shown in the UI with a "Benchmark" badge (PLAN.md §8).
+# Never our own result. Add an entry ONLY after reading the source yourself; every
+# entry needs a working source_url. Example shape:
+#
+# - name: Example programme (operator)
+#   metric: collection cost
+#   value: -10
+#   unit: "%"
+#   source_url: https://example.org/report
+#   note: what was measured, where, and when
+#
+# To verify before adding: the Ekocharita (Slovakia) / Sensoneo "-22% collection cost" figure in PLAN.md.
+[]
