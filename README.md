@@ -282,7 +282,7 @@ saving of B    = (cost A − cost B) ÷ cost A, per run, then median and range
 **The synthetic dataset.** [pipeline/synthetic.py](pipeline/synthetic.py), seed 2035: 30 containers, 60 candidates and 400 demand points, all generated and labelled synthetic throughout. It demonstrates the method on a denser network and does not describe Guimarães.
 
 **Provenance**
-- Each results file records its source commit (currently `bdefe0f`), generation time, distance provider and data sources. The app footer shows them.
+- Each results file records its source commit (currently `f3fdb42`), generation time, distance provider and data sources. The app footer shows them.
 - `out/source_report_<source>.md` lists which inputs and assumptions differ between datasets.
 
 **VITRUS data** has not been supplied. [docs/VITRUS_DATA.md](docs/VITRUS_DATA.md) is the intake procedure:
@@ -292,7 +292,7 @@ saving of B    = (cost A − cost B) ÷ cost A, per run, then median and range
 
 ## Results so far
 
-Simulated, from results commit `bdefe0f`, public dataset unless noted. These are model outputs under the assumptions listed in [Configuration](#configuration), not measured VITRUS operations.
+Simulated, from results commit `f3fdb42`, public dataset unless noted. These are model outputs under the assumptions listed in [Configuration](#configuration), not measured VITRUS operations.
 
 | Question | Result (median over 10 runs) |
 |---|---|
@@ -387,12 +387,12 @@ make web
 ## Testing and quality assurance
 
 ```sh
-make test                                        # pytest: 151 tests
+make test                                        # pytest: 152 tests
 cd web && npx tsc -b                             # type-check
 cd web && npm test                               # Vitest: 39 tests in 4 files
 cd web && npm run build && npx vite preview --port 4173 &
 cd web && npm run smoke                          # 6 interaction checks in headless Chrome
-cd web && npm run qa -- https://bhavya-jpg.github.io/retalho/   # 38-check QA pass against any deployment
+cd web && npm run qa -- https://bhavya-jpg.github.io/retalho/   # 38-check QA pass (EXPECT_COMMIT=<sha> pins provenance)
 ```
 
 **What the automated tests cover**
@@ -414,12 +414,13 @@ cd web && npm run qa -- https://bhavya-jpg.github.io/retalho/   # 38-check QA pa
 
 | Check | Result |
 |---|---|
-| CI commands (`uv sync --frozen`, solver check, pytest, `npm ci`, `tsc -b`, Vitest, build) | All passed: 151 + 39 tests |
+| CI commands (`uv sync --frozen`, solver check, pytest, `npm ci`, `tsc -b`, Vitest, build) | All passed: 152 + 39 tests |
 | [web/scripts/qa.mjs](web/scripts/qa.mjs), 38 checks: base path, JSON loading and provenance, every tab and refresh, both datasets, coverage at +0/+5/+15, all profiles, both strategies × 4 weeks × 2 runs, tooltips, stop selection, street routes, benchmark values and disclaimer, chart and table values, cost slider and reset, controls not covered by animation | 38 / 38, locally and live |
 | Console errors, page exceptions, failed requests, HTTP ≥ 400 | 0 / 0 / 0 / 0 |
 | Horizontal overflow, 5 views × 1440 / 1280 / 1024 / 900 / 768 / 390 / 360 px | None. A 3 px overflow found at 1024 px was fixed in this pass. |
 | axe-core, 5 views × light and dark | No violations |
 | Secrets scan of all tracked files | None found |
+| Routing determinism | A CI run returned the same routes assigned to identical trucks in a different order, failing the same-seed test. Routes are now put in a canonical order. Regenerating both datasets changed only truck-day numbering (no route, distance, time or cost); no failures in 44 repeated runs afterwards. |
 
 The QA and overflow scripts compare what is displayed with values recomputed independently from the JSON, rather than with the app's own code.
 

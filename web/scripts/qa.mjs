@@ -51,7 +51,9 @@ check("datasets.json lists datasets", idx.datasets.length === 2 && idx.default =
 for (const d of idx.datasets) {
   const meta = await ev(`qa.get("${d.file}").then(r => ({ commit: r.meta.git_commit, src: r.meta.data_source, keys: Object.keys(r).join(","), geo: Object.keys(r.route_geometry?.geometries || {}).length, bench: !!r.optimisation_benchmark }))`);
   check(`${d.file} loads`, meta.src === d.source && meta.geo > 0 && meta.bench, JSON.stringify(meta));
-  check(`${d.file} provenance commit`, meta.commit === "bdefe0f", meta.commit);
+  // A clean source commit (no "-dirty"); EXPECT_COMMIT pins it to a specific one.
+  const expected = process.env.EXPECT_COMMIT;
+  check(`${d.file} provenance commit`, /^[0-9a-f]{7,40}$/.test(meta.commit) && (!expected || meta.commit === expected), meta.commit);
 }
 const R = "window.__R";
 await ev(`qa.get("results-public.json").then(r => { ${R} = r; return true; })`);
