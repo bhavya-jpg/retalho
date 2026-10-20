@@ -4,7 +4,7 @@ Retalho helps VITRUS plan textile collection in Guimarães. It shows where texti
 
 Built for **Hack4Guimarães 2035, Challenge 5: TexVitrus**. The development plan is in [PLAN.md](PLAN.md).
 
-> **Status: milestones M0–M14 are complete.** The app runs on public data (OpenStreetMap + INE Census 2021) and on a synthetic demo set. Waiting on VITRUS: the container list, depot, fill rates and costs. Still to do by the team: deploy the static site and record the backup video.
+> **Status: milestones M0–M14 and should-haves S1 (street-following routes) and S2 (optimisation-value benchmark) are complete.** Live at https://bhavya-jpg.github.io/retalho/, deployed by CI. The app runs on public data (OpenStreetMap + INE Census 2021) and on a synthetic demo set. Waiting on VITRUS: the container list, depot, fill rates and costs ([docs/VITRUS_DATA.md](docs/VITRUS_DATA.md)). Still to do by the team: record the backup video.
 
 ## Rule compliance
 
@@ -32,7 +32,7 @@ make offline       # one self-contained HTML file for the pitch laptop: web/dist
 Tests:
 
 ```sh
-make test                          # Python: pytest (92 tests)
+make test                          # Python: pytest (145 tests)
 cd web && npm test                 # TypeScript: vitest (cost parity with Python)
 cd web && npm run build && npx vite preview --port 4173 &  npm run smoke   # browser smoke test (Chrome)
 ```
@@ -43,8 +43,9 @@ cd web && npm run build && npx vite preview --port 4173 &  npm run smoke   # bro
 
 ```
 data/raw/<source>/ --load--> data/clean/ --matrix--> cache/matrix_<hash>.json
-     --simulate--> out/simulation.json --cost--> out/breakeven.json
-     --coverage--> out/coverage.json --export--> out/results.json --> web/public/results.json --> dashboard
+     --coverage--> out/coverage.json --simulate--> out/simulation.json --cost--> out/breakeven.json
+     --benchmark--> out/benchmark.json --geometry--> out/route_geometry.json
+     --export--> out/results.json --> web/public/results-<source>.json --> dashboard
 ```
 
 The pipeline runs offline. The dashboard is a static site that reads one JSON file (schema: [schema/results.schema.json](schema/results.schema.json)) and computes euro figures in the browser, so cost sliders respond instantly.
@@ -110,7 +111,38 @@ This is the population share within `coverage_radius_m` of a textile point, meas
 
 Checks: coverage never falls as N grows, the number of sites is exactly N, and whether each solution contains the previous one (nested) is reported.
 
-### 7. Dashboard ([web/](web/))
+### 7. Street-following route lines, S1 ([pipeline/geometry.py](pipeline/geometry.py))
+
+This is display only.
+- **Order:** route order comes from the optimiser and is never changed.
+- **Distance:** comes from the distance matrix.
+- **Geometry:** for each distinct ordered stop sequence, the pipeline asks the local OSRM `route` service for the street path through the stops *in that order*.
+- **Storage:** paths are validated, cached (successes only), simplified to about 3 m and embedded in `results.json`. The static site never calls a routing API.
+
+If OSRM is unavailable, or a response is invalid (no route, bad polyline, out-of-range points, negative distance), that route falls back to straight segments. The map draws those **dashed** with an "approximate" label, and the tooltip says its km is still the road distance.
+
+As a check, OSRM's own path distance is compared with the matrix km used for costs. The median gap is 0.00% and the maximum 0.07% across all routes.
+
+### 8. Optimisation value, S2 ([pipeline/benchmark.py](pipeline/benchmark.py))
+
+Is Retalho's VROOM routing better than a simple alternative? The test is a deterministic **nearest-stop baseline**: for each truck-day, keep driving to the nearest unvisited stop by road distance (ties broken by id) that still fits the remaining capacity and shift, then return to the depot.
+
+**Identical inputs:**
+- The four weeks are replayed with the baseline as the router (`run_scenario(..., solver=...)`). Stops, kilograms and overflow are therefore identical by construction, and this is asserted every week.
+- Same matrix, capacity (loads rounded up as for VROOM), shift, service time, truck speed factor, truck-days, and cost model.
+
+**Formula:** improvement = (baseline − optimised) ÷ baseline, paired per run. Negative values are shown as they are; a zero or missing baseline is shown as unavailable.
+
+**Measured on the current data (simulated weeks):** the optimiser beat the baseline in all 120 runs.
+
+| Dataset | Median operating-cost improvement | Median distance improvement |
+|---|---|---|
+| Public | +2.9% to +7.1% | +3.2% to +14.2% |
+| Synthetic | +9.8% to +14.0% | +21.4% to +27.1% |
+
+Each range spans the fill profiles and both scenarios. Nearest-stop is a simple baseline, not necessarily the best alternative.
+
+### 9. Dashboard ([web/](web/))
 
 Vite + React + TypeScript + Tailwind, with Leaflet (used directly) and Recharts. It has four tabs:
 
@@ -119,7 +151,8 @@ Vite + React + TypeScript + Tailwind, with Leaflet (used directly) and Recharts.
 - **Recolha (Collection):**
   - B-vs-A tiles (median and range), plus a plain-language reading that applies the overflow rule
   - a full A/B table and the weekly distance chart
-  - routes per scenario, week and run
+  - the optimisation-value panel: nearest-stop baseline vs Retalho, side by side, with costs following the sliders
+  - street-following routes per scenario, week and run
   - the break-even chart, with total or per-tonne saving
 - **Pressupostos (Assumptions):** live cost sliders, the fill-profile selector, every assumption with its source badge, and data sources with licences.
 
@@ -145,7 +178,7 @@ The app ships two datasets and a switch in its header. The banner always says wh
 
 **OpenStreetMap almost certainly lists fewer textile containers than VITRUS operates.** So today's coverage figure (Measured) describes OSM-mapped points only. To make collection meaningful, Scenarios A and B run on a **planned network**: the existing points plus the 15 sites the coverage optimiser proposes (`collection_network_new_points`; set it to 0 for existing points only).
 
-Once VITRUS provides data, putting its files in `data/raw/vitrus/` (git-ignored) and running `make all SOURCE=vitrus` replaces all of this.
+Once VITRUS provides data, follow [docs/VITRUS_DATA.md](docs/VITRUS_DATA.md). `make vitrus-init` prepares the git-ignored `data/raw/vitrus/` folder without inventing anything, and `make all SOURCE=vitrus` reruns everything, including a report of which inputs and assumptions changed.
 
 ### Synthetic demo data: [pipeline/synthetic.py](pipeline/synthetic.py)
 
@@ -172,7 +205,8 @@ External benchmarks go in [config/benchmarks.yaml](config/benchmarks.yaml) only 
 - **One route per truck-day.** No mid-day unloading trips, which is conservative for capacity.
 - **Free-flow travel times.** OSRM car times are scaled by the `truck_speed_factor` assumption; there are no traffic or time-of-day effects.
 - **B knows average rates.** Scenario B's planner knows each container's average fill rate (as from history or "bin full" reports) but not the weekly variation; real estimates would be noisier.
-- **Routes drawn as straight lines.** Route lines join stops in order; street geometry is optional feature S1.
+- **Street geometry needs OSRM at build time.** Without it, routes are drawn as labelled dashed straight segments. Costs never depend on the drawing.
+- **The benchmark measures routing only.** Collection decisions are the same for both strategies, so it says nothing about A versus B.
 - **Coverage uses straight-line distance.** A walking-route version is optional O2.
 - **Synthetic points are not placed on streets.** Five of the 91 lie 250–650 m from a road. OSRM routes from the nearest road point, so that access distance is not counted.
 - **Routes use the default costs.** Cost sliders recompute € on routes optimised with the default costs; they do not re-route.
@@ -208,9 +242,11 @@ A failing check stops the run, so a broken build is never deployed. No secrets a
 
 ```
 config/      assumptions.yaml, synthetic.yaml, public_source.yaml, benchmarks.yaml
-pipeline/    check_env, synthetic, public_data, load, matrix, solve, simulate, cost, coverage, export, run_all
+pipeline/    check_env, synthetic, public_data, load, matrix, solve, simulate, cost, coverage, benchmark, geometry, export, run_all
 schema/      results.schema.json (the pipeline -> app contract)
-scripts/     osrm.sh (build / up / down), public_data.sh, osmium.Dockerfile
+scripts/     osrm.sh (build / up / down), public_data.sh, vitrus_init.sh, osmium.Dockerfile
+docs/        VITRUS_DATA.md (intake procedure for sponsor data)
+.github/     workflows/ci.yml (tests, build, Pages deploy, live smoke test)
 tests/       pytest per module + fixtures/ (valid, broken, cost_vectors.json)
 out/         stage outputs and results.json (generated)
 web/         dashboard; web/public/results.json is copied there by `make all`

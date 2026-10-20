@@ -356,3 +356,14 @@ The judge sees, in under 2 minutes, without anything failing:
 **Pitch (Mon 26 Oct, 14:30 Lisbon / 20:00 IST)**
 - [ ] Rehearsed ×5 to time; one slide per official criterion (innovation, technical soundness, impact on the territory, clarity)
 - [ ] Q&A answers ready on: data quality, simulated vs measured, why no sensors, cost assumptions, the two EU legal layers (separate collection since 2025; producer responsibility from 2028)
+
+---
+
+## 11. Status log (added during development; the plan above is unchanged)
+
+- **20 Oct 2026:**
+  - M0–M14 complete.
+  - S1 (street-following route lines) and S2 (optimisation value vs a nearest-stop baseline) complete.
+  - CI and GitHub Pages deployment live: https://bhavya-jpg.github.io/retalho/.
+  - Data: public OpenStreetMap + INE Census 2021 dataset. OSM lists only 2 textile containers in Guimarães, so collection is simulated on a planned network (existing + 15 coverage-proposed sites).
+  - Still open: VITRUS data (see docs/VITRUS_DATA.md), O1, O2, the threshold-T sweep, and the backup video.
