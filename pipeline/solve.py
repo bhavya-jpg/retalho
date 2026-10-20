@@ -142,6 +142,13 @@ def solve_day(m: dict, stop_ids: list[str], kg_by_id: dict[str, float], fleet: F
             steps = df[(df["vehicle_id"] == vid) & (df["type"] == "job")]
             stops = [job_of[int(j)] for j in steps["id"]]
             plan["routes"].append(_route_metrics(m, depot, stops, kg_by_id, fleet, truck=int(vid)))
+        # The vehicles are identical, so which one VROOM gives each route is an arbitrary tie-break that
+        # can differ between runs (seen on CI). Put the routes in a canonical order (by stop sequence)
+        # and number them 1..n, so identical inputs always give identical output. No route, distance,
+        # time or cost changes.
+        plan["routes"].sort(key=lambda r: r["stop_ids"])
+        for i, r in enumerate(plan["routes"], start=1):
+            r["truck"] = i
         unassigned_ids = [job_of[int(u["id"])] for u in sol.to_dict().get("unassigned", [])]
         total_kg = sum(kg_by_id[s] for s in stop_ids)
         plan["unassigned"] = {sid: _diagnose(m, depot, index[sid], kg_by_id[sid], fleet, total_kg)

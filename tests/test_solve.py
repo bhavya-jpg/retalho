@@ -145,3 +145,13 @@ def test_costs_fall_back_to_time_when_unknown():
     assert fleet(cost_per_km=None).vroom_costs() is not None
     plan = solve_day(line_matrix(), list(KG), KG, fleet(cost_per_km=None, crew_cost_per_h=None))
     assert plan["km"] == 8.0
+
+
+def test_routes_in_canonical_order():
+    # Identical vehicles make VROOM's vehicle-to-route assignment an arbitrary tie-break; the wrapper
+    # orders routes by stop sequence and numbers them 1..n so identical inputs give identical output.
+    m = random_matrix(40, seed=3)
+    stops = m["ids"][1:]
+    plan = solve_day(m, stops, {s: 80 for s in stops}, fleet(vehicles=4))
+    assert [r["stop_ids"] for r in plan["routes"]] == sorted(r["stop_ids"] for r in plan["routes"])
+    assert [r["truck"] for r in plan["routes"]] == list(range(1, len(plan["routes"]) + 1))
