@@ -101,7 +101,7 @@ export default function App() {
           <div className="ml-auto flex items-center gap-2">
             {index && index.datasets.length > 1 && (
               <label className="flex items-center gap-2 text-xs text-ink-2">
-                <span className="eyebrow hidden lg:inline">Data</span>
+                <span className="eyebrow hidden xl:inline">Data</span>
                 <select value={active?.source} onChange={(e) => setSource(e.target.value)} aria-label="Dataset"
                         className="h-9 max-w-[11rem] rounded-[var(--r-pill)] border border-line-strong bg-surface px-3 text-[13px] text-ink transition-colors duration-[var(--dur-1)] hover:border-ink sm:max-w-none">
                   {index.datasets.map((d) => <option key={d.source} value={d.source} title={d.label}>{SHORT_LABEL[d.source] ?? d.label}</option>)}
@@ -163,7 +163,7 @@ function NavLinks({ tab, go }: { tab: TabId; go: (t: TabId) => void }) {
              className={`relative z-10 whitespace-nowrap rounded-[var(--r-pill)] px-3 py-1.5 text-[13.5px] transition-colors duration-[var(--dur-2)] ${
                on ? `text-page ${pill ? "" : "bg-ink"}` : "text-ink-2 hover:bg-surface-2 hover:text-ink"}`}>
             <span className={`mono mr-1.5 text-[10.5px] ${on ? "opacity-70" : "text-muted"}`}>{t.n}</span>{t.pt}
-            <span className={`ml-1 hidden lg:inline ${on ? "opacity-70" : "text-muted"}`}>· {t.en}</span>
+            <span className={`ml-1 hidden xl:inline ${on ? "opacity-70" : "text-muted"}`}>· {t.en}</span>
           </a>
         );
       })}
