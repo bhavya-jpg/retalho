@@ -1,7 +1,7 @@
 // S2: does Retalho's route optimisation beat a simple nearest-stop ordering on identical inputs?
 import { useMemo, useState } from "react";
 import { Badge } from "../components/Badge";
-import { Card, Empty, Segmented } from "../components/StatTile";
+import { Card, Empty, PairBars, Segmented } from "../components/StatTile";
 import { benchmarkView, type BenchMetric } from "../lib/benchmark";
 import { eur, fmt, fmtRange, signedPct } from "../lib/format";
 import { useTokens } from "../lib/tokens";
@@ -61,14 +61,16 @@ export function BenchmarkCard({ r, profile, costs }: { r: Results; profile: stri
         {imp !== null && <>(lower in {view.better}, higher in {view.worse}, equal in {view.equal} of {view.valid} runs).</>}
         {view.valid < view.runs && <> In {view.runs - view.valid} run(s) the baseline could not fit every stop into the
           available truck-days; those runs are excluded.</>}
+        {" "}<span className="text-muted">This compares two routing methods inside the simulation; it is not a measured VITRUS saving.</span>
       </p>
       <div className="overflow-x-auto">
         <table className="tabular w-full text-left text-sm">
           <thead className="text-xs text-muted">
             <tr>
               <th className="py-2 font-medium">Four-week total</th>
-              <th className="py-2 font-medium"><span className="mr-1.5 inline-block h-2.5 w-2.5 rounded-full align-[-1px]" style={{ background: t.candidate }} />Nearest-stop baseline</th>
+              <th className="py-2 font-medium"><span className="mr-1.5 inline-block h-2.5 w-2.5 rounded-full align-[-1px]" style={{ background: t.baseline }} />Nearest-stop baseline</th>
               <th className="py-2 font-medium"><span className="mr-1.5 inline-block h-2.5 w-2.5 rounded-full align-[-1px]" style={{ background: policy === "A" ? t["series-a"] : t["series-b"] }} />Retalho optimised</th>
+              <th className="w-[16%] py-2 font-medium"><span className="sr-only">Comparison bars</span></th>
               <th className="py-2 font-medium">Improvement (paired)</th>
             </tr>
           </thead>
@@ -81,6 +83,8 @@ export function BenchmarkCard({ r, profile, costs }: { r: Results; profile: stri
                   <td className="py-2 pr-3 text-ink-2">{row.label}</td>
                   <td className="py-2 pr-3"><span className="font-medium text-ink">{bl.median}</span><span className="block text-xs text-muted">{bl.range}</span></td>
                   <td className="py-2 pr-3"><span className="font-medium text-ink">{op.median}</span><span className="block text-xs text-muted">{op.range}</span></td>
+                  <td className="py-3 pr-3">{row.same ? null : <PairBars a={view.baseline[row.key]?.median} b={view.optimised[row.key]?.median}
+                    colourA={t.baseline} colourB={policy === "A" ? t["series-a"] : t["series-b"]} />}</td>
                   <td className="py-2">{row.imp ? <Imp r={view.improvement[row.imp]} />
                     : row.same ? <span className="text-xs text-muted">identical by design</span> : <span className="text-xs text-muted">—</span>}</td>
                 </tr>

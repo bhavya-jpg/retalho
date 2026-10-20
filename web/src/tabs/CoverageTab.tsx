@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { CartesianGrid, Line, LineChart, ReferenceDot, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { MapLegend, MapView, type PointLayer } from "../components/MapView";
+import { MAP_FOREST, MAP_INK, MapLegend, MapView, type PointLayer } from "../components/MapView";
 import { Card, Empty, StatTile } from "../components/StatTile";
 import { fmt, pct } from "../lib/format";
 import { useTokens } from "../lib/tokens";
@@ -20,9 +20,9 @@ export function CoverageTab({ r }: { r: Results }) {
   const layers = useMemo<PointLayer[]>(() => {
     const cands = toPoints(r.network.candidates);
     return [
-      { name: "Candidate site (not chosen)", points: cands.filter((p) => !proposed.has(p.id)), color: t.candidate, radius: 3, hollow: true },
-      { name: "Existing textile point (kept)", points: toPoints(r.network.containers), color: t["series-a"], radius: 5, coverRadiusM: cov.radius_m },
-      { name: `Proposed new point (+${n})`, points: cands.filter((p) => proposed.has(p.id)), color: t["series-b"], radius: 6, coverRadiusM: cov.radius_m },
+      { name: "Candidate site (not chosen)", points: cands.filter((p) => !proposed.has(p.id)), color: t.candidate, radius: 3.5, hollow: true, key: "candidate" },
+      { name: "Existing textile point (kept)", points: toPoints(r.network.containers), color: MAP_INK, radius: 5.5, coverRadiusM: cov.radius_m, key: "existing" },
+      { name: `Proposed new point (+${n})`, points: cands.filter((p) => proposed.has(p.id)), color: MAP_FOREST, radius: 6, coverRadiusM: cov.radius_m, key: "proposed" },
     ];
   }, [n, r, t]);
 
@@ -61,8 +61,8 @@ export function CoverageTab({ r }: { r: Results }) {
           <Card title="Existing and proposed points" subtitle={`Shaded circles show the ${fmt(cov.radius_m)} m catchment of each point.`}>
             <MapView boundary={r.network.boundary} layers={layers} />
             <MapLegend items={[
-              { color: t["series-a"], label: "Existing (kept)" },
-              { color: t["series-b"], label: `Proposed (+${n})` },
+              { color: t.ink, label: "Existing (kept)" },
+              { color: t.accent, label: `Proposed (+${n})` },
               { color: t.candidate, label: "Other candidate sites", hollow: true },
             ]} />
           </Card>
@@ -81,8 +81,8 @@ export function CoverageTab({ r }: { r: Results }) {
                                  label={{ value: "every candidate", position: "insideTopLeft", fill: t.muted, fontSize: 11 }} />
                   <Tooltip formatter={(v) => [`${fmt(Number(v), 1)}%`, "Residents covered"]} labelFormatter={(l) => `+${l} new points`}
                            contentStyle={{ background: t.surface, border: `1px solid ${t.grid}`, color: t.ink }} />
-                  <Line type="monotone" dataKey="share" stroke={t["series-a"]} strokeWidth={2} dot={false} isAnimationActive={false} />
-                  <ReferenceDot x={n} y={step.share * 100} r={5} fill={t["series-b"]} stroke={t.surface} strokeWidth={2} />
+                  <Line type="monotone" dataKey="share" stroke={t.accent} strokeWidth={2} dot={false} isAnimationActive={false} />
+                  <ReferenceDot x={n} y={step.share * 100} r={5} fill={t.accent} stroke={t.surface} strokeWidth={2} />
                 </LineChart>
               </ResponsiveContainer>
             </div>

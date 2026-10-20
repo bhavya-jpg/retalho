@@ -5,13 +5,15 @@ import {
 } from "recharts";
 import { Badge, type BadgeKind } from "../components/Badge";
 import { MAP_INK, MapLegend, MapView, type PointLayer, type RouteLine } from "../components/MapView";
-import { Card, Empty, Segmented, StatTile } from "../components/StatTile";
+import { Card, Empty, PairBars, Segmented, StatTile } from "../components/StatTile";
 import { breakevenCurve, compareScenarios } from "../lib/cost";
 import { routeDrawing } from "../lib/routes";
 import { eur, fmt, fmtRange, signedPct } from "../lib/format";
 import { median } from "../lib/stats";
 import { useTokens } from "../lib/tokens";
 import type { CostParams, Range, Results } from "../types";
+import { WeaveGrid } from "../components/Diagrams";
+import { collectionWeave, sharedOrder } from "../lib/weave";
 import { BenchmarkCard } from "./BenchmarkCard";
 import { toPoints } from "./NetworkTab";
 
@@ -87,14 +89,14 @@ export function CollectionTab({ r, profile, setProfile, costs }: Props) {
         </p>
       </Card>
 
-      <ComparisonTable r={r} profile={profile} cmp={cmp} />
+      <RoutesCard r={r} profile={profile} />
 
-      <BenchmarkCard r={r} profile={profile} costs={costs} />
-
-      <div className="grid gap-4 lg:grid-cols-5">
-        <div className="lg:col-span-3"><RoutesCard r={r} profile={profile} /></div>
+      <div className="grid gap-5 lg:grid-cols-5">
+        <div className="lg:col-span-3"><ComparisonTable r={r} profile={profile} cmp={cmp} /></div>
         <div className="lg:col-span-2"><WeeklyChart r={r} profile={profile} /></div>
       </div>
+
+      <BenchmarkCard r={r} profile={profile} costs={costs} />
 
       <BreakevenCard r={r} profile={profile} costs={costs} means={means} />
       <p className="text-xs text-muted">
@@ -138,6 +140,7 @@ function ComparisonTable({ r, profile, cmp }: { r: Results; profile: string; cmp
               <th className="py-2 font-medium">Metric</th>
               <th className="py-2 font-medium"><Key color={t["series-a"]} />A · fixed weekly</th>
               <th className="py-2 font-medium"><Key color={t["series-b"]} />B · demand-based</th>
+              <th className="w-[22%] py-2 font-medium"><span className="sr-only">Comparison bars</span></th>
             </tr>
           </thead>
           <tbody>
@@ -148,7 +151,8 @@ function ComparisonTable({ r, profile, cmp }: { r: Results; profile: string; cmp
                 <tr key={row.label} className="border-t border-line align-top">
                   <td className="py-2 pr-3 text-ink-2">{row.label}</td>
                   <td className="py-2 pr-3"><span className="font-medium text-ink">{a.median}</span><div className="text-xs text-muted">{a.range}</div></td>
-                  <td className="py-2"><span className="font-medium text-ink">{b.median}</span><div className="text-xs text-muted">{b.range}</div></td>
+                  <td className="py-2 pr-3"><span className="font-medium text-ink">{b.median}</span><div className="text-xs text-muted">{b.range}</div></td>
+                  <td className="py-3"><PairBars a={row.a?.median} b={row.b?.median} colourA={t["series-a"]} colourB={t["series-b"]} /></td>
                 </tr>
               );
             })}
@@ -204,14 +208,39 @@ function RoutesCard({ r, profile }: { r: Results; profile: string }) {
   const t = useTokens();
   const [scenario, setScenario] = useState<"A" | "B">("A");
   const [week, setWeek] = useState(1);
+  const [selected, setSelected] = useState<string | null>(null);
   const runs = r.scenarios[profile][scenario].per_seed;
   const [seedIdx, setSeedIdx] = useState(0);
   const run = runs[Math.min(seedIdx, runs.length - 1)];
   const wk = run.weeks[Math.min(week, run.weeks.length) - 1];
   const color = scenario === "A" ? t["series-a"] : t["series-b"];
+  const pts = useMemo(() => collectionPoints(r), [r]);
+  const ids = useMemo(() => pts.map((p) => p.id), [pts]);
+  const props = useMemo(() => new Map([...r.network.containers.features, ...r.network.candidates.features]
+    .map((f) => [f.properties.id, f.properties])), [r]);
+  const proposed = useMemo(() => new Set(r.meta.collection_network?.proposed ?? []), [r]);
+
+  const weave = useMemo(() => { try { return collectionWeave(run, ids); } catch { return null; } }, [run, ids]);
+  const order = useMemo(() => (weave ? sharedOrder(weave) : ids), [weave, ids]);
+
+  // Where is each stop this week: truck-day and position (from the simulated route).
+  const position = useMemo(() => {
+    const m = new Map<string, { truck: number; pos: number; of: number }>();
+    wk.routes.forEach((x, i) => x.stop_ids.forEach((id, k) => m.set(id, { truck: i + 1, pos: k + 1, of: x.stop_ids.length })));
+    return m;
+  }, [wk]);
+
+  const tooltip = (id: string) => {
+    const p = props.get(id);
+    const where = position.get(id);
+    const weeks = run.weeks.filter((w) => w.routes.some((x) => x.stop_ids.includes(id))).map((w) => `W${w.week}`);
+    return `<div class="tt-id">${id}</div><b>${p?.name ?? id}</b>${proposed.has(id) ? " · <i>proposed site</i>" : ""}` +
+      `<br>${p?.site_type ?? "type n/a"} · capacity ${p?.capacity_kg ? `${fmt(p.capacity_kg)} kg` : "assumed default"}` +
+      `<br>${where ? `This week: truck-day ${where.truck}, stop ${where.pos} of ${where.of}` : "Not collected this week"}` +
+      `<br>Collected in run ${run.seed}: ${weeks.length ? weeks.join(" · ") : "none"}`;
+  };
 
   const { layers, routes, approx } = useMemo(() => {
-    const pts = collectionPoints(r);
     const at = new Map(pts.map((p) => [p.id, [p.lat, p.lon] as [number, number]]));
     const d = r.network.depot;
     const depot: [number, number] = [d.lat, d.lon];
@@ -226,51 +255,112 @@ function RoutesCard({ r, profile }: { r: Results; profile: string }) {
           (drawing.approximate ? "<br><i>Line drawn straight (approximate); km is still the road distance</i>" : ""),
       };
     });
+    const withLabel = (list: typeof pts) => list.map((p) => ({ ...p, label: tooltip(p.id) }));
     const layers: PointLayer[] = [
-      { name: "Not collected this week", points: pts.filter((p) => !served.has(p.id)), color: t.candidate, radius: 4, hollow: true },
-      { name: "Collected this week", points: pts.filter((p) => served.has(p.id)), color, radius: 5 },
-      { name: "Depot", points: [{ id: d.id, lat: d.lat, lon: d.lon, label: `<b>${d.name}</b>` }], color: MAP_INK, radius: 6, square: true },
+      { name: "Not collected this week", points: withLabel(pts.filter((p) => !served.has(p.id))), color: t.candidate, radius: 4.5, hollow: true, key: "idle", selectable: true },
+      { name: "Collected this week", points: withLabel(pts.filter((p) => served.has(p.id))), color, radius: 5.5, key: "served", selectable: true },
+      { name: "Depot (assumed location)", points: [{ id: d.id, lat: d.lat, lon: d.lon, label: `<b>${d.name}</b>` }], color: MAP_INK, radius: 6, square: true },
     ];
     return { layers, routes, approx };
-  }, [r, wk, color, t]);
+  }, [r, wk, color, t, pts, position, run]);
+
+  const sel = selected ? { id: selected, p: props.get(selected), where: position.get(selected),
+    weeks: run.weeks.filter((w) => w.routes.some((x) => x.stop_ids.includes(selected))).map((w) => w.week) } : null;
 
   return (
-    <Card title="Collection routes"
-          subtitle={<>Scenario {scenario}, week {wk.week}, run {run.seed} of {runs.length}. Stops in the optimised visiting order;
-            distances are road distances from the OSRM matrix.</>}
-          actions={
-            <div className="flex flex-wrap gap-2">
-              <Segmented label="Scenario" value={scenario} onChange={setScenario} options={[{ value: "A", label: "A" }, { value: "B", label: "B" }]} />
-              <Segmented label="Week" value={week} onChange={setWeek}
-                         options={run.weeks.map((w) => ({ value: w.week, label: `W${w.week}` }))} />
-              <select aria-label="Run" value={seedIdx} onChange={(e) => setSeedIdx(Number(e.target.value))}
-                      className="rounded-md border border-line bg-surface px-2 py-1 text-sm text-ink">
-                {runs.map((s, i) => <option key={s.seed} value={i}>Run {s.seed}</option>)}
-              </select>
+    <section className="panel overflow-hidden" aria-labelledby="routes-title">
+      <div className="flex flex-wrap items-end justify-between gap-3 border-b border-line px-5 py-4">
+        <div>
+          <p className="eyebrow">Routes · run {run.seed} of {runs.length}</p>
+          <h2 id="routes-title" className="mt-1 text-lg font-semibold text-ink">Collection routes, week by week</h2>
+          <p className="mt-0.5 text-sm text-ink-2">Stops in the optimised visiting order; distances are road distances from the OSRM matrix.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Segmented label="Scenario" value={scenario} onChange={setScenario} options={[{ value: "A", label: "A" }, { value: "B", label: "B" }]} />
+          <Segmented label="Week" value={week} onChange={setWeek} options={run.weeks.map((w) => ({ value: w.week, label: `W${w.week}` }))} />
+          <select aria-label="Run" value={seedIdx} onChange={(e) => setSeedIdx(Number(e.target.value))}
+                  className="h-9 rounded-[var(--r-pill)] border border-line-strong bg-surface px-3 text-sm text-ink transition-colors duration-[var(--dur-1)] hover:border-ink">
+            {runs.map((s, i) => <option key={s.seed} value={i}>Run {s.seed}</option>)}
+          </select>
+        </div>
+      </div>
+      <div className="grid lg:grid-cols-[1.7fr_1fr]">
+        <div className="p-4 sm:p-5">
+          {wk.stops === 0 && (
+            <div className="mb-3"><Empty>No collection in week {wk.week} of this run: no container was projected to reach the {fmt(r.meta.threshold_T * 100)}% threshold.</Empty></div>
+          )}
+          <MapView boundary={r.network.boundary} layers={layers} routes={routes} height={440} selectedId={selected} onSelect={setSelected}
+                   drawKey={`${scenario}-${week}-${run.seed}`} label={`Map of week ${wk.week} routes, scenario ${scenario}`} />
+          <MapLegend items={[
+            { color, label: `Street route (${scenario})`, line: true },
+            ...(approx.length ? [{ color, label: "Approximate straight segments", line: true, dashed: true }] : []),
+            { color, label: "Collected this week" },
+            { color: t.candidate, label: "Not collected", hollow: true },
+            { color: t.ink, label: "Depot (assumed)", square: true },
+          ]} />
+          <p className="mt-2 text-xs text-muted">
+            {wk.routes.length === 0 ? null : approx.length === 0
+              ? <>Lines follow the street network (OSRM route geometry for the same stop order, © OpenStreetMap contributors). Click a stop for details.</>
+              : <>{approx.length} of {wk.routes.length} route{wk.routes.length === 1 ? "" : "s"} drawn as dashed straight segments
+                  because street geometry is unavailable ({[...new Set(approx)].join("; ")}). Their km figures are still road distances.</>}
+          </p>
+          <p className="mt-1 text-sm text-ink-2">
+            This week: <b className="text-ink">{wk.stops}</b> stops, <b className="text-ink">{fmt(wk.km, 1)} km</b>,{" "}
+            {wk.truck_days} truck-day{wk.truck_days === 1 ? "" : "s"}, {fmt(wk.kg)} kg, {wk.overflow_container_days} overflow container-days.
+          </p>
+        </div>
+        <aside className="flex flex-col gap-5 border-t border-line bg-surface-2/40 p-4 sm:p-5 lg:border-l lg:border-t-0" aria-label="Collection calendar and stop details">
+          <div>
+            <p className="eyebrow">Collection calendar · scenario {scenario}</p>
+            <p className="mt-1 text-xs text-ink-2">Rows are containers, columns weeks; a thread is a collection. Selected week outlined.</p>
+            <div className="mt-3">
+              {weave ? <WeaveGrid weave={weave} order={order} colour={color} label={`Scenario ${scenario}, run ${run.seed}`}
+                                  compact highlightWeek={wk.week} highlightId={selected} />
+                : <Empty>Calendar unavailable for this run.</Empty>}
             </div>
-          }>
-      {wk.stops === 0 && (
-        <div className="mb-2"><Empty>No collection in week {wk.week} of this run: no container was projected to reach the {fmt(r.meta.threshold_T * 100)}% threshold.</Empty></div>
-      )}
-      <MapView boundary={r.network.boundary} layers={layers} routes={routes} height={400} />
-      <MapLegend items={[
-        { color, label: `Street route (${scenario})`, line: true },
-        ...(approx.length ? [{ color, label: "Approximate straight segments", line: true, dashed: true }] : []),
-        { color, label: "Collected this week" },
-        { color: t.candidate, label: "Not collected", hollow: true },
-        { color: t.ink, label: "Depot", square: true },
-      ]} />
-      <p className="mt-2 text-xs text-muted">
-        {wk.routes.length === 0 ? null : approx.length === 0
-          ? <>Lines follow the street network (OSRM route geometry for the same stop order, © OpenStreetMap contributors).</>
-          : <>{approx.length} of {wk.routes.length} route{wk.routes.length === 1 ? "" : "s"} drawn as dashed straight segments
-              because street geometry is unavailable ({[...new Set(approx)].join("; ")}). Their km figures are still road distances.</>}
-      </p>
-      <p className="mt-1 text-sm text-ink-2">
-        This week: <b className="text-ink">{wk.stops}</b> stops, <b className="text-ink">{fmt(wk.km, 1)} km</b>,{" "}
-        {wk.truck_days} truck-day{wk.truck_days === 1 ? "" : "s"}, {fmt(wk.kg)} kg, {wk.overflow_container_days} overflow container-days.
-      </p>
-    </Card>
+          </div>
+          <div aria-live="polite">
+            <p className="eyebrow">Selected stop</p>
+            {sel ? (
+              <div className="seam mt-2 rounded-[var(--r-sm)] bg-surface p-3 text-sm">
+                <p className="mono text-[11px] text-muted">{sel.id}</p>
+                <p className="font-medium text-ink">{sel.p?.name ?? sel.id}{proposed.has(sel.id) && <span className="ml-1 text-xs text-ink-2">· proposed site</span>}</p>
+                <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[13px]">
+                  <dt className="text-muted">Type</dt><dd className="text-ink">{sel.p?.site_type ?? "not recorded"}</dd>
+                  <dt className="text-muted">Capacity</dt><dd className="text-ink tabular">{sel.p?.capacity_kg ? `${fmt(sel.p.capacity_kg)} kg` : `${fmt(Number(r.assumptions.find((a) => a.key === "container_capacity_kg")?.value ?? 0))} kg (assumed)`}</dd>
+                  <dt className="text-muted">This week</dt><dd className="text-ink">{sel.where ? `truck-day ${sel.where.truck}, stop ${sel.where.pos} of ${sel.where.of}` : "not collected"}</dd>
+                  <dt className="text-muted">Weeks collected</dt><dd className="text-ink">{sel.weeks.length ? sel.weeks.map((w) => `W${w}`).join(" · ") : "none in this run"}</dd>
+                  <dt className="text-muted">Fill level</dt><dd className="text-ink-2">simulated inside the pipeline; not exported per stop</dd>
+                </dl>
+                <button type="button" className="mt-2 text-xs text-ink-2 underline" onClick={() => setSelected(null)}>Clear selection</button>
+              </div>
+            ) : <p className="mt-2 text-sm text-ink-2">Click a stop on the map, or one of the stops below.</p>}
+          </div>
+          <div>
+            <p className="eyebrow">This week&apos;s truck-days</p>
+            {wk.routes.length === 0 ? <p className="mt-2 text-sm text-ink-2">None.</p> : (
+              <ol className="mt-2 flex flex-col gap-3">
+                {wk.routes.map((x, i) => (
+                  <li key={i}>
+                    <p className="text-[13px] text-ink"><b>Truck-day {i + 1}</b> <span className="text-ink-2">· {x.stop_ids.length} stops · {fmt(x.km, 1)} km · {fmt(x.kg)} kg</span></p>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {x.stop_ids.map((id, k) => (
+                        <button key={id} type="button" onClick={() => setSelected(selected === id ? null : id)} aria-pressed={selected === id}
+                                title={props.get(id)?.name ?? id}
+                                className={`mono rounded-[var(--r-xs)] border px-1.5 py-0.5 text-[10.5px] transition-colors duration-[var(--dur-1)] ${
+                                  selected === id ? "border-ink bg-ink text-page" : "border-line bg-surface text-ink-2 hover:border-ink hover:text-ink"}`}>
+                          {k + 1}
+                        </button>
+                      ))}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
+        </aside>
+      </div>
+    </section>
   );
 }
 

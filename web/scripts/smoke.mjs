@@ -75,7 +75,7 @@ const r4 = await ev(`(async () => {
   input.dispatchEvent(new Event("input", { bubbles: true }));
   await new Promise(r => setTimeout(r, 300));
   const shown = document.querySelector('[data-stat="Residents covered"] [data-value]').textContent;
-  const orange = [...document.querySelectorAll(".leaflet-overlay-pane path")].filter(p => p.getAttribute("fill-opacity") === "1" && /eb6834|d95926/i.test(p.getAttribute("fill"))).length;
+  const orange = document.querySelectorAll(".leaflet-overlay-pane path.pt-proposed").length;
   return { shown, json: res.coverage.additions[10].share, orange, nSites: res.coverage.additions[10].site_ids.length };
 })()`);
 check("M11 slider +10 shows JSON coverage", r4.shown === (r4.json * 100).toFixed(1) + "%", `shown ${r4.shown}, json ${(r4.json * 100).toFixed(2)}%`);

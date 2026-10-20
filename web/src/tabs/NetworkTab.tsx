@@ -31,8 +31,8 @@ export function NetworkTab({ r }: { r: Results }) {
   const osmPoints = containerTypes.includes("public");
 
   const layers = useMemo<PointLayer[]>(() => [
-    { name: "Candidate site", points: toPoints(candidates), color: t.candidate, radius: 4, hollow: true },
-    { name: "Existing textile point", points: toPoints(containers), color: t["series-a"], radius: 5 },
+    { name: "Candidate site", points: toPoints(candidates), color: t.candidate, radius: 4, hollow: true, key: "candidate" },
+    { name: "Existing textile point", points: toPoints(containers), color: MAP_INK, radius: 5.5, key: "existing" },
     { name: "Depot", points: [{ id: depot.id, lat: depot.lat, lon: depot.lon, label: `<b>${depot.name}</b>` }],
       color: MAP_INK, radius: 6, square: true },
   ], [candidates, containers, depot, t]);
@@ -42,7 +42,7 @@ export function NetworkTab({ r }: { r: Results }) {
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatTile label="Existing textile points" value={fmt(containers.features.length)}
-                  badges={containerTypes.map(sourceBadge)} swatch={t["series-a"]} />
+                  badges={containerTypes.map(sourceBadge)} swatch={t.ink} />
         <StatTile label="Candidate sites" value={fmt(candidates.features.length)}
                   sub="Places a new point could go" badges={[...new Set(candidates.features.map((f) => sourceBadge(f.properties.source_type)))]} />
         <StatTile label={`Residents within ${fmt(cov.radius_m)} m of a ${osmPoints ? "mapped " : ""}point`} value={pct(cov.existing.share)}
@@ -55,7 +55,7 @@ export function NetworkTab({ r }: { r: Results }) {
       <Card title="Textile collection network" subtitle="Existing points, candidate sites and the depot. Hover a point for details.">
         <MapView boundary={boundary} layers={layers} />
         <MapLegend items={[
-          { color: t["series-a"], label: "Existing textile point" },
+          { color: t.ink, label: "Existing textile point" },
           { color: t.candidate, label: "Candidate site", hollow: true },
           { color: t.ink, label: "Depot", square: true },
         ]} />

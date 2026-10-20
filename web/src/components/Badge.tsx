@@ -20,8 +20,8 @@ export function Badge({ kind }: { kind: BadgeKind }) {
   return (
     <span
       title={b.title}
-      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium leading-4 whitespace-nowrap ${
-        b.warn ? "border-transparent bg-warn-bg text-warn-ink" : "border-line bg-surface-2 text-ink-2"
+      className={`mono inline-flex cursor-help items-center rounded-[var(--r-xs)] border px-1.5 py-px text-[10.5px] font-medium uppercase leading-4 tracking-[0.06em] whitespace-nowrap ${
+        b.warn ? "border-transparent bg-warn-bg text-warn-ink" : "border-line-strong text-ink-2"
       }`}
     >
       {b.text}
