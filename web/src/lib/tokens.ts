@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
-const NAMES = ["ink", "ink-2", "muted", "grid", "axis", "surface", "surface-2", "series-a", "series-b", "candidate"] as const;
+const NAMES = ["ink", "ink-2", "muted", "grid", "axis", "surface", "surface-2", "series-a", "series-b", "candidate",
+  "accent", "baseline", "flax", "page"] as const;
 export type Tokens = Record<(typeof NAMES)[number], string>;
 
 function read(): Tokens {

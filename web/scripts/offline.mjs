@@ -26,8 +26,15 @@ try {
 // "<" escaped so no data string can close the <script> element.
 const data = JSON.stringify(files).replace(/</g, "\\u003c");
 
+// Fonts referenced by the CSS (url(./font.woff2), relative to assets/) are embedded as data URIs.
+const inlineFonts = (cssText) => cssText.replace(/url\((?:\.\/)?([^)"']+\.(woff2?))\)/g, (m, file, ext) => {
+  if (ext === "woff") return "url(data:font/woff;base64,)"; // woff2 is listed first and preferred; drop the fallback
+  const bytes = readFileSync(new URL(`assets/${file.replace(/^.*\//, "")}`, dist));
+  return `url(data:font/woff2;base64,${bytes.toString("base64")})`;
+});
 html = html
-  .replace(css[0], () => `<style>${read(css[1])}</style>`)
+  .replace(css[0], () => `<style>${inlineFonts(read(css[1]))}</style>`)
+  .replace(/<link rel="icon"[^>]*>/, `<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,${Buffer.from(read("favicon.svg")).toString("base64")}">`)
   .replace(js[0], () => `<script>window.__RETALHO_DATA__=${data}</script>\n` +
     `<script type="module">${read(js[1]).replace(/<\/script/gi, "<\\/script")}</script>`);
 

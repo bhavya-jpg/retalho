@@ -1,66 +1,112 @@
 @import "tailwindcss";
 
-/* Design tokens. Chart/series values follow the validated dataviz reference palette
-   (A = slot 1 blue, B = slot 2 orange; checked with validate_palette.js in both modes). */
+/* =====================================================================
+   Retalho design tokens: "tecido urbano" (urban fabric).
+   Canvas and type come from undyed fibres; data colours are dyes.
+   Strategy colours (indigo A, terracotta B) were checked with the dataviz
+   palette validator in both themes (lightness, chroma, CVD, contrast).
+   Text tokens are >= 4.5:1 on canvas and surface. Terracotta and olive
+   are for marks only; text accents use --terracotta-ink.
+   See docs/DESIGN_RESEARCH.md.
+   ===================================================================== */
 :root {
   color-scheme: light;
-  --page: #f9f9f7;
-  --surface: #fcfcfb;
-  --surface-2: #f0efec;
-  --ink: #0b0b0b;
-  --ink-2: #52514e;
-  --muted: #6f6d68;
-  --grid: #e1e0d9;
-  --axis: #c3c2b7;
-  --border: rgba(11, 11, 11, 0.1);
-  --series-a: #2a78d6;
-  --series-b: #eb6834;
-  --candidate: #898781;
-  --good-text: #006300;
-  --warn-bg: #fff4d6;
-  --warn-ink: #6b4a00;
-  --critical: #d03b3b;
+
+  /* fibres */
+  --cotton: #f3efe6;
+  --ivory: #faf8f2;
+  --oat: #ece6d9;
+  --stone: #e3ded4;
+  --flax: #d8c8ac;
+  /* inks and dyes */
+  --ink: #22241f;
+  --ink-2: #4a4a42;
+  --muted: #66645a;
+  --forest: #355447;
+  --forest-2: #2a4439;
+  --olive: #85876a;
+  --indigo: #2f5c9e;
+  --terracotta: #b65e3b;
+  --terracotta-ink: #9a4a2c;
+
+  /* semantic roles (component classes use these) */
+  --page: var(--cotton);
+  --surface: var(--ivory);
+  --surface-2: var(--oat);
+  --grid: #e1dacb;
+  --axis: #c6bdab;
+  --border: rgba(34, 36, 31, 0.12);
+  --border-strong: rgba(34, 36, 31, 0.3);
+  --series-a: var(--indigo);
+  --series-b: var(--terracotta);
+  --baseline: #a39d8b;
+  --candidate: #8e8a7c;
+  --accent: var(--forest);
+  --accent-hover: var(--forest-2);
+  --on-accent: #ffffff;
+  --accent-text: var(--forest);
+  --warn-bg: #f1e4c9;
+  --warn-ink: #6b4a12;
+  --good-text: #2f5f45;
+  --critical: #a63a2a;
+  --weave-ink: rgba(122, 104, 74, 0.075);
+  --grain-opacity: 0.42;
+
+  /* type */
+  --font-display: "Instrument Serif", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* shape, depth, layers, widths */
+  --r-xs: 3px;
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+  --r-pill: 999px;
+  --shadow-1: 0 1px 0 rgba(34, 36, 31, 0.04), 0 1px 2px rgba(34, 36, 31, 0.06);
+  --shadow-2: 0 18px 40px -24px rgba(34, 36, 31, 0.35);
+  --z-header: 1100; /* above Leaflet panes and controls (<= 1000) */
+  --z-overlay: 1200;
+  --w-content: 1240px;
+
+  /* motion: short responses, one slower tier for reveals (research, docs/DESIGN_RESEARCH.md) */
+  --dur-1: 150ms;
+  --dur-2: 300ms;
+  --dur-3: 600ms;
+  --dur-4: 900ms;
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:where(:not([data-theme="light"])) {
     color-scheme: dark;
-    --page: #0d0d0d;
-    --surface: #1a1a19;
-    --surface-2: #262624;
-    --ink: #f0efec;
-    --ink-2: #c3c2b7;
-    --muted: #9c9a93;
-    --grid: #2c2c2a;
-    --axis: #383835;
-    --border: rgba(255, 255, 255, 0.1);
-    --series-a: #3987e5;
-    --series-b: #d95926;
-    --candidate: #898781;
-    --good-text: #0ca30c;
-    --warn-bg: #3a2e10;
-    --warn-ink: #f5d28a;
-    --critical: #e66767;
+    --page: #1d1f1b;
+    --surface: #252722;
+    --surface-2: #2d2f29;
+    --ink: #ede8dc;
+    --ink-2: #c9c3b4;
+    --muted: #9c978a;
+    --grid: #34362f;
+    --axis: #4a4c43;
+    --border: rgba(237, 232, 220, 0.12);
+    --border-strong: rgba(237, 232, 220, 0.3);
+    --series-a: #5f8ad0;
+    --series-b: #d2724b;
+    --baseline: #7f7a6c;
+    --candidate: #8c887b;
+    --accent: #8db8a2;
+    --accent-hover: #a6cbb7;
+    --on-accent: #1d1f1b;
+    --accent-text: #8db8a2;
+    --terracotta-ink: #e0906f;
+    --warn-bg: #3a2e14;
+    --warn-ink: #f0d49a;
+    --good-text: #8db8a2;
+    --critical: #e07a68;
+    --weave-ink: rgba(216, 200, 172, 0.045);
+    --grain-opacity: 0.16;
   }
-}
-:root[data-theme="dark"] {
-  color-scheme: dark;
-  --page: #0d0d0d;
-  --surface: #1a1a19;
-  --surface-2: #262624;
-  --ink: #f0efec;
-  --ink-2: #c3c2b7;
-  --muted: #9c9a93;
-  --grid: #2c2c2a;
-  --axis: #383835;
-  --border: rgba(255, 255, 255, 0.1);
-  --series-a: #3987e5;
-  --series-b: #d95926;
-  --candidate: #898781;
-  --good-text: #0ca30c;
-  --warn-bg: #3a2e10;
-  --warn-ink: #f5d28a;
-  --critical: #e66767;
 }
 
 @theme inline {
@@ -72,37 +118,277 @@
   --color-muted: var(--muted);
   --color-grid: var(--grid);
   --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
   --color-series-a: var(--series-a);
   --color-series-b: var(--series-b);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-on-accent: var(--on-accent);
+  --color-accent-text: var(--accent-text);
+  --color-terracotta-ink: var(--terracotta-ink);
+  --color-flax: var(--flax);
   --color-warn-bg: var(--warn-bg);
   --color-warn-ink: var(--warn-ink);
   --color-good: var(--good-text);
   --color-critical: var(--critical);
-  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono);
+  --radius-xs: var(--r-xs);
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-lg);
 }
 
+/* ---------------------------------------------------------------- base */
+html {
+  scroll-behavior: smooth;
+}
+section[id],
+[id="main"] {
+  scroll-margin-top: 92px; /* clears the sticky header */
+}
+.recharts-cartesian-axis-tick-value {
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
 body {
   background: var(--page);
   color: var(--ink);
   font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+/* Fibre grain: a static SVG noise tile, multiplied very lightly over the canvas. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: var(--grain-opacity);
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .4 0 0 0 0 .32 0 0 0 .22 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+#root {
+  position: relative;
+  z-index: 1;
+}
+::selection {
+  background: color-mix(in srgb, var(--flax) 70%, transparent);
+  color: var(--ink);
+}
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r-xs);
 }
 
+@layer components {
+/* ---------------------------------------------------------------- type */
+.font-display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
 .tabular {
   font-variant-numeric: tabular-nums;
 }
+.mono {
+  font-family: var(--font-mono);
+}
 
-/* Leaflet: keep the map legible when tiles are missing, and theme popups. */
+/* ---------------------------------------------------------------- textile surfaces */
+/* Woven grid: warp and weft threads with over/under breaks, 14 px repeat. */
+.weave {
+  background-color: var(--surface);
+  background-image:
+    linear-gradient(90deg, transparent 0 6px, var(--weave-ink) 6px 8px, transparent 8px),
+    linear-gradient(0deg, transparent 0 6px, var(--weave-ink) 6px 8px, transparent 8px);
+  background-size: 14px 14px, 14px 28px;
+}
+.weave-fine {
+  background-image:
+    repeating-linear-gradient(90deg, var(--weave-ink) 0 1px, transparent 1px 7px),
+    repeating-linear-gradient(0deg, var(--weave-ink) 0 1px, transparent 1px 7px);
+}
+/* Stitched seam: the only decorative dashed line; never used on the map (dashes there mean "approximate"). */
+.seam {
+  border: 1px dashed var(--border-strong);
+}
+.seam-top {
+  background-image: repeating-linear-gradient(90deg, var(--border-strong) 0 6px, transparent 6px 11px);
+  background-size: 100% 1px;
+  background-repeat: no-repeat;
+}
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-1);
+}
+
+}
+
+/* ---------------------------------------------------------------- motion */
+/* Content is visible by default. Reveals only hide content when JS has
+   opted in (html.motion-ok) and the user has not asked for reduced motion. */
+.motion-ok .reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity var(--dur-3) var(--ease-out),
+    transform var(--dur-3) var(--ease-out);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+.motion-ok .reveal.is-in {
+  opacity: 1;
+  transform: none;
+}
+/* Thread drawing: paths use pathLength="1". */
+.motion-ok .thread-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset var(--dur-4) var(--ease-in-out);
+  transition-delay: var(--draw-delay, 0ms);
+}
+.motion-ok .is-in .thread-draw,
+.motion-ok .thread-draw.is-in {
+  stroke-dashoffset: 0;
+}
+.motion-ok .pop {
+  opacity: 0;
+  transform: scale(0.4);
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    opacity var(--dur-2) var(--ease-out),
+    transform var(--dur-2) var(--ease-out);
+  transition-delay: var(--pop-delay, 0ms);
+}
+.motion-ok .is-in .pop {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+  }
+}
+
+@layer components {
+/* ---------------------------------------------------------------- controls */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: var(--r-pill);
+  font-weight: 500;
+  font-size: 14.5px;
+  transition:
+    background-color var(--dur-1) var(--ease-out),
+    color var(--dur-1) var(--ease-out),
+    border-color var(--dur-1) var(--ease-out),
+    transform var(--dur-1) var(--ease-out);
+}
+.btn:active {
+  transform: translateY(1px);
+}
+.btn-primary {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.btn-primary:hover {
+  background: var(--accent-hover);
+}
+.btn-ghost {
+  border: 1px solid var(--border-strong);
+  color: var(--ink);
+}
+.btn-ghost:hover {
+  border-color: var(--ink);
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+}
+.btn .arrow {
+  transition: transform var(--dur-1) var(--ease-out);
+}
+.btn:hover .arrow {
+  transform: translateX(3px);
+}
+.link-underline {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 0% 1px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  transition: background-size var(--dur-2) var(--ease-out);
+}
+.link-underline:hover {
+  background-size: 100% 1px;
+}
+input[type="range"] {
+  accent-color: var(--accent);
+}
+select {
+  font: inherit;
+}
+
+}
+
+/* ---------------------------------------------------------------- Leaflet */
+/* The map is a warm, desaturated paper in both themes; overlays keep full colour. */
 .leaflet-container {
-  background: #f0efec; /* light paper in both themes, also when tiles are offline */
+  background: #efeae0;
   font-family: var(--font-sans);
+}
+.leaflet-tile-pane {
+  filter: grayscale(0.85) sepia(0.2) saturate(0.85) brightness(1.04) contrast(0.92);
 }
 .leaflet-tooltip {
   background: var(--surface);
   color: var(--ink);
-  border: 1px solid var(--border);
-  box-shadow: none;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  box-shadow: var(--shadow-2);
+  padding: 8px 10px;
+  font-size: 12.5px;
+  line-height: 1.45;
 }
-
-input[type="range"] {
-  accent-color: var(--series-a);
+.leaflet-tooltip .tt-id {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+/* The map is light paper in both themes, so its controls use fixed light-paper colours. */
+.leaflet-control-zoom a {
+  color: #22241f !important;
+  background: #faf8f2 !important;
+}
+.leaflet-control-zoom a:hover {
+  background: #ece6d9 !important;
+}
+.leaflet-control-attribution {
+  background: color-mix(in srgb, var(--ivory) 85%, transparent) !important;
+  font-size: 10.5px;
 }
