@@ -2,12 +2,13 @@
 SOURCE ?= synthetic
 PY := uv run python
 
-.PHONY: help install check-env public-data data osrm osrm-build osrm-down matrix simulate cost coverage benchmark geometry export all test web web-build offline docker-check-env clean
+.PHONY: help install check-env public-data vitrus-init data osrm osrm-build osrm-down matrix simulate cost coverage benchmark geometry export all test web web-build offline docker-check-env clean
 
 help:
 	@echo "make install          install Python (uv) and web (npm) dependencies"
 	@echo "make check-env        print toolchain versions and prove the solvers run"
 	@echo "make public-data      build data/raw/public from OpenStreetMap + INE Census 2021 (needs Docker)"
+	@echo "make vitrus-init      prepare data/raw/vitrus/ (git-ignored) for VITRUS files; see docs/VITRUS_DATA.md"
 	@echo "make data             build data/clean/ from data/raw/\$$SOURCE (default: synthetic)"
 	@echo "make osrm             start the local OSRM server (builds the road network first if needed)"
 	@echo "make osrm-build       re-clip the OSM extract to data/clean's boundary and rebuild OSRM"
@@ -36,6 +37,9 @@ check-env:
 
 public-data:
 	scripts/public_data.sh
+
+vitrus-init:
+	scripts/vitrus_init.sh
 
 data:
 ifeq ($(SOURCE),synthetic)

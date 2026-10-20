@@ -60,7 +60,8 @@ def data_sources(clean: dict, m: dict) -> list[dict]:
     if sources_file.exists():
         for key, src in json.loads(sources_file.read_text(encoding="utf-8")).items():
             used = {"ine": "population and boundary", "osm": "textile points and candidate sites"}.get(key)
-            out.append({"name": f"{src['name']}{f' ({used})' if used else ''}", "source_type": "public",
+            out.append({"name": f"{src['name']}{f' ({used})' if used else ''}",
+                        "source_type": src.get("source_type", "public"),
                         "licence": src["licence"], "url": src.get("url")})
     synthetic = [name for name, types in layers.items() if "synthetic" in types]
     if synthetic:
