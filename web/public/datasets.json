@@ -5,13 +5,13 @@
    "source": "public",
    "label": "Public data (OpenStreetMap + INE Census 2021)",
    "file": "results-public.json",
-   "generated_at": "2026-10-20T10:10:03+00:00"
+   "generated_at": "2026-10-20T12:45:24+00:00"
   },
   {
    "source": "synthetic",
    "label": "Synthetic demo data",
    "file": "results-synthetic.json",
-   "generated_at": "2026-10-20T10:09:34+00:00"
+   "generated_at": "2026-10-20T12:44:54+00:00"
   }
  ]
 }
