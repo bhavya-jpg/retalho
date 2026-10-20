@@ -10,11 +10,13 @@ import "@fontsource/ibm-plex-mono/latin-400.css";
 import "@fontsource/ibm-plex-mono/latin-500.css";
 import "./index.css";
 import App from "./App";
+import { applyLang, detectLang } from "./lib/i18n";
 import { applyMotionClasses } from "./lib/motion";
 
-// Reveals and ambient motion are opt-in: without JS, or when the visitor's motion preference resolves
-// to off (by default, the system's reduced-motion setting), everything is visible and still.
+// Reveals are opt-in: without JS, everything is visible and still.
 applyMotionClasses();
+// Interface language before the first render: ?lang=, a remembered choice, the browser's languages, English.
+applyLang(detectLang());
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
