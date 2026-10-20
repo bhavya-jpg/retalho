@@ -3,6 +3,7 @@
 // (OSRM street geometry) drawn as a thread. Animates once; static under reduced motion.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { boundsOf, makeProjection, outerRings, pathD, thin, type LonLat } from "../lib/geo";
+import { t } from "../lib/i18n";
 import { useMotion, useReveal } from "../lib/motion";
 import { decodePolyline } from "../lib/polyline";
 import type { Results } from "../types";
@@ -75,8 +76,8 @@ export function HeroWeave({ r }: { r: Results | null }) {
   const gx = (i: number) => WEAVE.x0 + 14 + (i * (WEAVE.x1 - WEAVE.x0 - 28)) / (N - 1);
   const gy = (j: number) => WEAVE.y0 + 14 + (j * (WEAVE.y1 - WEAVE.y0 - 28)) / (N - 1);
   const label = model
-    ? `Illustration: woven threads unravel into the real Guimarães boundary, ${model.network.length} collection points of the planned network and one simulated collection route${model.approximate ? " (drawn straight, approximate)" : " following the streets"}.`
-    : "Illustration: woven threads unravel into a city network.";
+    ? t(model.approximate ? "land.heroAriaApprox" : "land.heroAria", { n: model.network.length })
+    : t("land.heroAriaPlain");
 
   return (
     <svg ref={ref} viewBox={`0 0 ${W} ${H}`} className={`h-auto w-full ${cls}`} role="img" aria-label={label}>

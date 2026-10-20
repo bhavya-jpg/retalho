@@ -1,5 +1,6 @@
 // Original diagrams in the Retalho textile language. Data-driven where the data exists (WeaveGrid);
 // otherwise explicitly conceptual and labelled as such.
+import { t, tr } from "../lib/i18n";
 import { useMotion, useReveal } from "../lib/motion";
 import type { Weave } from "../lib/weave";
 
@@ -17,7 +18,7 @@ export function WeaveGrid({ weave, order, colour, label, compact = false, highli
   return (
     <figure className="m-0">
       <svg ref={ref} viewBox={`0 0 ${w} ${h}`} className={`h-auto w-full ${cls}`} role="img"
-           aria-label={`${label}: ${weave.collections} collections of ${weave.ids.length} containers over ${weave.weeks.length} weeks.`}>
+           aria-label={t("weave.aria", { label, c: weave.collections, n: weave.ids.length, w: weave.weeks.length })}>
         {highlightWeek !== undefined && weave.weeks.indexOf(highlightWeek) >= 0 && (
           <rect x={padL + weave.weeks.indexOf(highlightWeek) * colW} y={padT - 4} width={colW} height={h - padT} rx="4"
                 fill="var(--surface-2)" stroke="var(--border-strong)" strokeWidth="1" />
@@ -36,7 +37,7 @@ export function WeaveGrid({ weave, order, colour, label, compact = false, highli
         )}
         {weave.weeks.map((wk, c) => (
           <text key={wk} x={padL + c * colW + colW / 2} y={12} textAnchor="middle" fontSize="10" fill="var(--muted)"
-                fontFamily="var(--font-mono)">W{wk}</text>
+                fontFamily="var(--font-mono)">{t("common.weekShort", { n: wk })}</text>
         ))}
         {/* warp: the bare threads */}
         {weave.weeks.map((_, c) => [0.25, 0.5, 0.75].map((f) => (
@@ -55,7 +56,7 @@ export function WeaveGrid({ weave, order, colour, label, compact = false, highli
             {weave.cells[ri].map((on, c) => on && (
               <rect key={c} x={padL + c * colW + 3} y={padT + r * rowH + 1.5} width={colW - 6} height={rowH - 3} rx={(rowH - 3) / 2}
                     fill={colour} className="pop" style={{ ["--pop-delay" as string]: `${c * 120 + r * 12}ms` }}>
-                <title>{`${order[r]}: collected in week ${weave.weeks[c]}`}</title>
+                <title>{t("weave.cell", { id: order[r], w: weave.weeks[c] })}</title>
               </rect>
             ))}
           </g>
@@ -63,7 +64,7 @@ export function WeaveGrid({ weave, order, colour, label, compact = false, highli
       </svg>
       <figcaption className="mt-2 flex items-baseline justify-between gap-3 text-xs text-ink-2">
         <span>{label}</span>
-        <span className="mono tabular text-ink">{weave.collections} collections</span>
+        <span className="mono tabular text-ink">{t("weave.collections", { c: weave.collections })}</span>
       </figcaption>
     </figure>
   );
@@ -72,18 +73,14 @@ export function WeaveGrid({ weave, order, colour, label, compact = false, highli
 /** Conceptual journey of a textile, with the part Retalho plans marked. Not a data view. */
 export function JourneyDiagram() {
   const { ref, cls } = useReveal<HTMLOListElement>(0.2);
-  const steps = [
-    { t: "Drop-off", d: "A resident leaves textiles at a point", ours: false },
-    { t: "Collection point", d: "Where points are, and who can reach them", ours: true },
-    { t: "Collection route", d: "When each point is emptied, in what order", ours: true },
-    { t: "Handling", d: "Sorting and grading by the operator", ours: false },
-    { t: "Next destination", d: "Reuse, resale or recycling", ours: false },
-  ];
+  const steps = ([1, 2, 3, 4, 5] as const).map((n) => ({
+    t: t(`journey.${n}`), d: t(`journey.${n}.d`), ours: n === 2 || n === 3,
+  }));
   return (
     <div>
-      <ol ref={ref} className={`grid grid-cols-1 gap-3 sm:grid-cols-5 sm:gap-0 ${cls}`} aria-label="Conceptual textile journey">
+      <ol ref={ref} className={`grid grid-cols-1 gap-3 sm:grid-cols-5 sm:gap-0 ${cls}`} aria-label={t("journey.aria")}>
         {steps.map((s, i) => (
-          <li key={s.t} className="reveal relative sm:pr-4" style={{ ["--reveal-delay" as string]: `${i * 90}ms` }}>
+          <li key={s.t} className="reveal relative sm:pe-4" style={{ ["--reveal-delay" as string]: `${i * 90}ms` }}>
             <div className="flex items-center gap-2">
               <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full border text-[11px] mono ${s.ours
                 ? "border-transparent bg-accent text-on-accent" : "border-line-strong text-muted"}`}>{i + 1}</span>
@@ -97,9 +94,9 @@ export function JourneyDiagram() {
       <div className="mt-5 grid grid-cols-1 gap-3 text-xs sm:grid-cols-5">
         <span className="hidden sm:block" />
         <span className="seam col-span-1 rounded-[var(--r-sm)] px-3 py-2 text-ink-2 sm:col-span-2">
-          <b className="text-ink">Retalho plans these two steps.</b> It does not collect, sort or recycle textiles.
+          {tr("journey.ours")}
         </span>
-        <span className="text-muted sm:col-span-2">Steps 1, 4 and 5 are carried out by residents and the operator, outside this tool.</span>
+        <span className="text-muted sm:col-span-2">{t("journey.others")}</span>
       </div>
     </div>
   );
@@ -109,16 +106,16 @@ export function JourneyDiagram() {
 export function PipelineDiagram() {
   const { live } = useMotion();
   const cols = [
-    { h: "Inputs", items: ["OpenStreetMap roads", "OSM recycling points", "INE Census 2021", "assumptions.yaml"] },
-    { h: "Pipeline (Python)", items: ["Road distances · OSRM", "Coverage · spopt MCLP", "4 weeks × 10 runs · VROOM", "Nearest-stop benchmark", "Street geometry · OSRM"] },
-    { h: "Static results", items: ["results-<source>.json", "schema-checked, labelled"] },
-    { h: "This app", items: ["Maps, tables, charts", "€ recomputed in the browser"] },
+    { h: t("pipe.inputs"), items: [t("pipe.roads"), t("pipe.points"), t("pipe.census"), "assumptions.yaml"] },
+    { h: t("pipe.pipeline"), items: [t("pipe.distances"), t("pipe.coverage"), t("pipe.sim"), t("pipe.bench"), t("pipe.geometry")] },
+    { h: t("pipe.static"), items: ["results-<source>.json", t("pipe.checked")] },
+    { h: t("pipe.app"), items: [t("pipe.views"), t("pipe.euro")] },
   ];
   const { ref, cls } = useReveal<HTMLDivElement>(0.2);
   return (
-    <div ref={ref} className={`grid grid-cols-1 gap-4 md:grid-cols-4 md:gap-0 ${cls}`} role="group" aria-label="How inputs become a collection plan">
+    <div ref={ref} className={`grid grid-cols-1 gap-4 md:grid-cols-4 md:gap-0 ${cls}`} role="group" aria-label={t("pipe.aria")}>
       {cols.map((c, i) => (
-        <div key={c.h} className="reveal relative md:pr-6" style={{ ["--reveal-delay" as string]: `${i * 110}ms` }}>
+        <div key={c.h} className="reveal relative md:pe-6" style={{ ["--reveal-delay" as string]: `${i * 110}ms` }}>
           <p className="eyebrow">{String(i + 1).padStart(2, "0")} · {c.h}</p>
           <ul className="mt-3 flex flex-col gap-1.5">
             {c.items.map((x) => (
@@ -126,7 +123,7 @@ export function PipelineDiagram() {
             ))}
           </ul>
           {i < cols.length - 1 && (
-            <svg className="absolute right-0 top-9 hidden h-5 w-7 md:block" viewBox="0 0 24 16" aria-hidden overflow="visible">
+            <svg className="absolute end-0 top-9 hidden h-5 w-7 md:block rtl:-scale-x-100" viewBox="0 0 24 16" aria-hidden overflow="visible">
               <path d="M2 8 C 8 2, 14 14, 20 8" fill="none" stroke="var(--terracotta)" strokeWidth="1.6" className="thread-draw" pathLength={1} />
               <path d="M17 5l4 3-4 3" fill="none" stroke="var(--terracotta)" strokeWidth="1.6" />
               {live && [0, 0.8].map((d) => (
@@ -161,11 +158,11 @@ export function OrderDiagram() {
   return (
     <figure className="m-0">
       <svg ref={ref} viewBox="0 0 540 170" className={`h-auto w-full ${cls}`} role="img"
-           aria-label="Illustration: the same seven stops and depot visited in two orders, nearest-stop first and optimised.">
-        {panel(nn, "var(--baseline)", "NEAREST STOP FIRST", 0)}
-        {panel(opt, "var(--accent)", "OPTIMISED ORDER", 280)}
+           aria-label={t("order.aria")}>
+        {panel(nn, "var(--baseline)", t("order.nearest"), 0)}
+        {panel(opt, "var(--accent)", t("order.optimised"), 280)}
       </svg>
-      <figcaption className="mt-2 text-xs text-muted">Illustration, not data. Same stops, loads, trucks and costs; only the visiting order and the split into truck-days change.</figcaption>
+      <figcaption className="mt-2 text-xs text-muted">{t("order.caption")}</figcaption>
     </figure>
   );
 }

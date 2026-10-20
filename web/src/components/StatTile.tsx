@@ -2,11 +2,12 @@ import type { ReactNode } from "react";
 import { Badge, type BadgeKind } from "./Badge";
 
 /** Stat tile: label · value (median) · range · source badges. Open layout under a stitched rule. */
-export function StatTile({ label, value, sub, badges = [], swatch }: {
-  label: string; value: ReactNode; sub?: ReactNode; badges?: BadgeKind[]; swatch?: string;
+/** `id` is a stable, untranslated name for tests (defaults to the label). */
+export function StatTile({ label, value, sub, badges = [], swatch, id }: {
+  label: string; value: ReactNode; sub?: ReactNode; badges?: BadgeKind[]; swatch?: string; id?: string;
 }) {
   return (
-    <div data-stat={label} className="seam-top flex min-w-0 flex-col gap-1 pt-3">
+    <div data-stat={id ?? label} className="seam-top flex min-w-0 flex-col gap-1 pt-3">
       <div className="flex items-start gap-2 text-[13px] text-ink-2">
         {swatch && <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: swatch }} aria-hidden />}
         <span>{label}</span>

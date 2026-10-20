@@ -5,6 +5,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useEffect, useRef, useState } from "react";
 import { useMotion } from "../lib/motion";
+import { t } from "../lib/i18n";
 
 export type MapPoint = { id: string; lat: number; lon: number; label: string };
 export type PointLayer = {
@@ -20,7 +21,7 @@ export const MAP_FOREST = "#355447";
 const MAP_BOUNDARY = "#4a4a42";
 const MAP_RING = "#faf8f2";
 
-export function MapView({ boundary, layers, routes = [], height = 440, selectedId, onSelect, drawKey, label = "Map", trucks = false }: {
+export function MapView({ boundary, layers, routes = [], height = 440, selectedId, onSelect, drawKey, label, trucks = false }: {
   boundary: GeoJSON.FeatureCollection; layers: PointLayer[]; routes?: RouteLine[]; height?: number;
   selectedId?: string | null; onSelect?: (id: string | null) => void; drawKey?: string; label?: string; trucks?: boolean;
 }) {
@@ -44,7 +45,9 @@ export function MapView({ boundary, layers, routes = [], height = 440, selectedI
     tiles.on("tileload", () => { errors = 0; setTilesFailed(false); });
     tiles.addTo(m);
     const b = L.geoJSON(boundary, { style: { color: MAP_BOUNDARY, weight: 1.8, opacity: 0.85, fill: false, interactive: false } }).addTo(m);
-    const fit = () => m.fitBounds(b.getBounds(), { padding: [14, 14] });
+    // No animation: a zoom transition still running when the map is removed (tab or language switch
+    // during a resize) ends on a detached pane and throws inside Leaflet.
+    const fit = () => m.fitBounds(b.getBounds(), { padding: [14, 14], animate: false });
     fit();
     let userMoved = false;
     m.on("dragstart zoomstart", (e) => { if ((e as L.LeafletEvent & { originalEvent?: Event }).originalEvent) userMoved = true; });
@@ -52,11 +55,11 @@ export function MapView({ boundary, layers, routes = [], height = 440, selectedI
     overlay.current = L.layerGroup().addTo(m);
     map.current = m;
     // Refit when the container gets its real size (first layout, window resize) unless the user has moved the map.
-    const ro = new ResizeObserver(() => { m.invalidateSize(); if (!userMoved) fit(); });
+    const ro = new ResizeObserver(() => { m.invalidateSize({ animate: false }); if (!userMoved) fit(); });
     ro.observe(el.current);
     const io = new IntersectionObserver(([e]) => { visible.current = e.isIntersecting; });
     io.observe(el.current);
-    return () => { ro.disconnect(); io.disconnect(); m.remove(); map.current = null; };
+    return () => { ro.disconnect(); io.disconnect(); m.stop(); m.remove(); map.current = null; };
   }, [boundary]);
 
   useEffect(() => {
@@ -145,10 +148,10 @@ export function MapView({ boundary, layers, routes = [], height = 440, selectedI
   return (
     <div className="relative">
       <div ref={el} style={{ height }} className="w-full overflow-hidden rounded-[var(--r-md)] border border-line"
-           role="region" aria-label={label} />
+           role="region" aria-label={label ?? t("map.label")} dir="ltr" />
       {tilesFailed && (
-        <div className="absolute left-14 right-2 top-2 z-[1000] w-fit rounded-[var(--r-sm)] bg-warn-bg px-2 py-1 text-xs text-warn-ink">
-          Base map unavailable (offline?). Points and boundary are still exact.
+        <div dir="auto" className="absolute left-14 right-2 top-2 z-[1000] w-fit rounded-[var(--r-sm)] bg-warn-bg px-2 py-1 text-xs text-warn-ink">
+          {t("map.tilesFailed")}
         </div>
       )}
     </div>

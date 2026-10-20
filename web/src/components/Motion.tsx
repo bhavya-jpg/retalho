@@ -29,7 +29,7 @@ export function Selvedge({ items }: { items: ReactNode[] }) {
     </div>
   );
   return (
-    <div className="selvedge relative -mx-4 overflow-hidden border-y border-line bg-surface py-5 [mask-image:linear-gradient(90deg,transparent,black_7%,black_93%,transparent)]" aria-hidden>
+    <div className="selvedge relative -mx-4 overflow-hidden border-y border-line bg-surface py-5 [mask-image:linear-gradient(90deg,transparent,black_7%,black_93%,transparent)]" aria-hidden dir="ltr">
       <div className="loop marquee flex w-max">{row("a")}{row("b")}</div>
     </div>
   );

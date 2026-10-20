@@ -1,12 +1,9 @@
 // Textile graphic language: swatches, thread rules and section headers. Original SVG, no assets.
 import type { ReactNode } from "react";
+import { t, type Key } from "../lib/i18n";
 import { useReveal } from "../lib/motion";
 
 export type SwatchKind = "cotton" | "linen" | "denim" | "knit" | "recycled";
-
-const SWATCH_NAMES: Record<SwatchKind, string> = {
-  cotton: "Cotton · plain weave", linen: "Linen · slub", denim: "Denim · 3/1 twill", knit: "Knit · jersey", recycled: "Recycled fibre",
-};
 
 /** Small square of cloth drawn in SVG. Decorative unless `labelled`. */
 export function Swatch({ kind, size = 120, labelled = false, className = "" }: { kind: SwatchKind; size?: number; labelled?: boolean; className?: string }) {
@@ -54,7 +51,7 @@ export function Swatch({ kind, size = 120, labelled = false, className = "" }: {
         {/* frayed edge: a stitched seam inset from the cut */}
         <rect x="4" y="4" width="52" height="52" fill="none" stroke="rgba(255,255,255,.55)" strokeWidth="0.7" strokeDasharray="2.2 1.8" />
       </svg>
-      {labelled && <figcaption className="eyebrow mt-2 max-w-[11ch] text-[10.5px] leading-snug sm:max-w-none">{SWATCH_NAMES[kind]}</figcaption>}
+      {labelled && <figcaption className="eyebrow mt-2 max-w-[11ch] text-[10.5px] leading-snug sm:max-w-none">{t(`swatch.${kind}` as Key)}</figcaption>}
     </figure>
   );
 }
