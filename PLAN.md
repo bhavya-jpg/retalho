@@ -367,3 +367,7 @@ The judge sees, in under 2 minutes, without anything failing:
   - CI and GitHub Pages deployment live: https://bhavya-jpg.github.io/retalho/.
   - Data: public OpenStreetMap + INE Census 2021 dataset. OSM lists only 2 textile containers in Guimarães, so collection is simulated on a planned network (existing + 15 coverage-proposed sites).
   - Still open: VITRUS data (see docs/VITRUS_DATA.md), O1, O2, the threshold-T sweep, and the backup video.
+- **20 Oct 2026 (later):**
+  - Visual redesign "tecido urbano": textile design system, landing story at `#inicio`, routes map with collection calendar and stop details, accessibility audit clean.
+  - No change to data or calculations.
+  - Research notes in docs/DESIGN_RESEARCH.md.
