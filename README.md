@@ -393,7 +393,7 @@ make web
 ## Testing and quality assurance
 
 ```sh
-make test                                        # pytest: 152 tests
+make test                                        # pytest: 153 tests
 cd web && npx tsc -b                             # type-check
 cd web && npm test                               # Vitest: 55 tests in 5 files
 cd web && npm run build && npx vite preview --port 4173 &
@@ -420,7 +420,7 @@ cd web && npm run qa -- https://bhavya-jpg.github.io/retalho/   # 46-check QA pa
 
 | Check | Result |
 |---|---|
-| CI commands (`uv sync --frozen`, solver check, pytest, `npm ci`, `tsc -b`, Vitest, build) | All passed: 152 + 55 tests |
+| CI commands (`uv sync --frozen`, solver check, pytest, `npm ci`, `tsc -b`, Vitest, build) | All passed: 153 + 55 tests |
 | [web/scripts/qa.mjs](web/scripts/qa.mjs), 46 checks: base path, JSON loading and provenance, every tab and refresh, both datasets, coverage at +0/+5/+15, all profiles, both strategies × 4 weeks × 2 runs, tooltips, stop selection, street routes, benchmark values and disclaimer, chart and table values, cost slider and reset, controls not covered by animation, every animated block ends visible, and each of the five other languages on all 5 views at 1440 / 1024 / 390 px (no English left, no overflow, header controls on screen) plus language persistence | 46 / 46 locally, in 3 consecutive runs |
 | Console errors, page exceptions, failed requests, HTTP ≥ 400 | 0 / 0 / 0 / 0 |
 | Horizontal overflow, 5 views × 1440 / 1280 / 1024 / 900 / 768 / 390 / 360 px | None. A 3 px overflow found at 1024 px was fixed in this pass. |
@@ -428,7 +428,7 @@ cd web && npm run qa -- https://bhavya-jpg.github.io/retalho/   # 46-check QA pa
 | Secrets scan of all tracked files | None found |
 | Hidden diagrams (found 20 Oct 2026) | The landing page's textile-journey and pipeline diagrams stayed invisible: their steps waited for a reveal class that was set on the parent instead. Fixed, and the QA pass now fails if any animated block stays hidden. |
 | Map exception on fast view changes | Removing a map during a resize-triggered zoom animation threw inside Leaflet. Map refits no longer animate, and the map stops before it is removed; 0 errors in 3 runs afterwards. |
-| Routing determinism | A CI run returned the same routes assigned to identical trucks in a different order, failing the same-seed test. Routes are now put in a canonical order. Regenerating both datasets changed only truck-day numbering (no route, distance, time or cost); no failures in 44 repeated runs afterwards. |
+| Routing determinism | A CI run returned the same routes assigned to identical trucks in a different order, failing the same-seed test. Routes are now put in a canonical order. Regenerating both datasets changed only truck-day numbering (no route, distance, time or cost); no failures in 44 repeated runs afterwards. A later CI run found a second tie: on a symmetric matrix a route and its reverse cost the same, and the direction returned could differ. When both directions have identical distance and time, the smaller one is now kept; none of the 1,186 published routes changes. |
 
 The QA and overflow scripts compare what is displayed with values recomputed independently from the JSON, rather than with the app's own code.
 

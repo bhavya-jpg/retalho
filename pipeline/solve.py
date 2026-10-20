@@ -142,6 +142,13 @@ def solve_day(m: dict, stop_ids: list[str], kg_by_id: dict[str, float], fleet: F
             steps = df[(df["vehicle_id"] == vid) & (df["type"] == "job")]
             stops = [job_of[int(j)] for j in steps["id"]]
             plan["routes"].append(_route_metrics(m, depot, stops, kg_by_id, fleet, truck=int(vid)))
+        # On a symmetric matrix a route and its reverse cost exactly the same, and which direction VROOM
+        # returns is another tie-break (also seen on CI). Keep the smaller direction, but only when both
+        # directions have identical distance and travel time, so no metric changes.
+        for i, r in enumerate(plan["routes"]):
+            rev = r["stop_ids"][::-1]
+            if rev < r["stop_ids"] and _seq_cost(m, depot, rev, fleet) == _seq_cost(m, depot, r["stop_ids"], fleet):
+                plan["routes"][i] = _route_metrics(m, depot, rev, kg_by_id, fleet, truck=r["truck"])
         # The vehicles are identical, so which one VROOM gives each route is an arbitrary tie-break that
         # can differ between runs (seen on CI). Put the routes in a canonical order (by stop sequence)
         # and number them 1..n, so identical inputs always give identical output. No route, distance,
@@ -167,6 +174,14 @@ def solve_day(m: dict, stop_ids: list[str], kg_by_id: dict[str, float], fleet: F
     plan["vehicles_used"] = len(plan["routes"])
     plan["solve_s"] = round(time.perf_counter() - t0, 3)
     return plan
+
+
+def _seq_cost(m: dict, depot: int, stops: list[str], fleet: Fleet) -> tuple[int, int]:
+    """(distance m, truck travel s) of depot -> stops -> depot."""
+    index = {pid: i for i, pid in enumerate(m["ids"])}
+    seq = [depot] + [index[s] for s in stops] + [depot]
+    return (sum(m["distances_m"][a][b] for a, b in zip(seq, seq[1:])),
+            sum(_truck_seconds(m, a, b, fleet.speed_factor) for a, b in zip(seq, seq[1:])))
 
 
 def _route_metrics(m: dict, depot: int, stops: list[str], kg_by_id: dict[str, float], fleet: Fleet,

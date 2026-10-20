@@ -42,7 +42,7 @@ def random_matrix(n_stops: int, seed: int) -> dict:
 def test_four_stop_fixture_known_order_and_km():
     plan = solve_day(line_matrix(), ["C", "A", "D", "B"], KG, fleet())
     (route,) = plan["routes"]
-    assert route["stop_ids"] in (["A", "B", "C", "D"], ["D", "C", "B", "A"])  # same tour, either direction
+    assert route["stop_ids"] == ["A", "B", "C", "D"]  # symmetric matrix: the smaller of the two equal directions
     assert plan["km"] == 8.0
     assert plan["travel_h"] == pytest.approx(8 / 60, abs=1e-3)
     assert plan["service_h"] == pytest.approx(4 * 5 / 60, abs=1e-3)
@@ -155,3 +155,19 @@ def test_routes_in_canonical_order():
     plan = solve_day(m, stops, {s: 80 for s in stops}, fleet(vehicles=4))
     assert [r["stop_ids"] for r in plan["routes"]] == sorted(r["stop_ids"] for r in plan["routes"])
     assert [r["truck"] for r in plan["routes"]] == list(range(1, len(plan["routes"]) + 1))
+
+
+def test_reverse_kept_only_when_it_costs_the_same():
+    # Symmetric matrix: both directions tie, so the canonical (smaller) direction is returned.
+    plan = solve_day(line_matrix(), ["D", "B", "C", "A"], KG, fleet())
+    assert plan["routes"][0]["stop_ids"] == ["A", "B", "C", "D"]
+    # Asymmetric matrix: going out via A is cheap and coming back via A is expensive, so the
+    # optimiser's direction (D first) must be kept even though ["A", ...] sorts first.
+    m = line_matrix()
+    for j in range(1, 5):
+        m["distances_m"][0][j] = m["distances_m"][j][0] = 4000  # depot equidistant from every stop
+    m["distances_m"][4][0] = 500   # D -> depot is short
+    m["distances_m"][0][4] = 9000  # depot -> D is long
+    m["durations_s"] = [[v * 0.06 for v in row] for row in m["distances_m"]]
+    plan = solve_day(m, ["A", "B", "C", "D"], KG, fleet())
+    assert plan["routes"][0]["stop_ids"][-1] == "D"
