@@ -37,11 +37,21 @@ class StaleError(Exception):
     pass
 
 
-def git_commit() -> str:
+# Folders that hold only files this pipeline writes. They are excluded from the dirty check:
+# otherwise exporting one dataset would mark the next dataset's results "-dirty" even from a clean
+# tree. Everything else (code, config, input data, untracked files) still counts.
+GENERATED_PATHS = ("out", "web/public")
+
+
+def git_commit(root: Path = ROOT) -> str:
+    """Short HEAD commit of the code that produced the results, with "-dirty" if any source file
+    (tracked or untracked, outside GENERATED_PATHS) differs from that commit."""
     try:
-        sha = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, capture_output=True, text=True,
+        sha = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=root, capture_output=True, text=True,
                              check=True).stdout.strip()
-        dirty = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True).stdout.strip()
+        exclude = [f":(exclude){p}" for p in GENERATED_PATHS]
+        dirty = subprocess.run(["git", "status", "--porcelain", "--", ".", *exclude], cwd=root,
+                               capture_output=True, text=True, check=True).stdout.strip()
         return sha + ("-dirty" if dirty else "")
     except (subprocess.CalledProcessError, FileNotFoundError):
         return "uncommitted"
