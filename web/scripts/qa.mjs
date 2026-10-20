@@ -62,7 +62,12 @@ const P = await ev(`(() => { const v = k => ${R}.assumptions.find(a => a.key ===
 // landing
 check("landing h1", (await ev(`qa.text("h1")`)) === "Give every thread a better route.", await ev(`qa.text("h1")`));
 check("landing has no event branding", !(await ev(`/hack4|hackathon|challenge 5|texvitrus/i.test(document.body.innerText)`)));
-check("landing residents figure", (await ev(`document.body.innerText.includes(qa.fmt(${R}.coverage.population_total))`)));
+// Scroll the whole landing page, then every reveal-animated block must have ended up visible.
+const hidden = await ev(`(async () => { for (let y = 0; y <= document.body.scrollHeight; y += 400) { scrollTo(0, y); await new Promise(r => setTimeout(r, 120)); }
+  await new Promise(r => setTimeout(r, 1500)); scrollTo(0, 0);
+  const all = [...document.querySelectorAll(".reveal, .pop")]; return { n: all.length, hidden: all.filter(e => +getComputedStyle(e).opacity < 0.99).map(e => (e.textContent || e.tagName).trim().slice(0, 40)) }; })()`);
+check("landing: every animated block ends visible", hidden.n > 0 && hidden.hidden.length === 0, `${hidden.n - hidden.hidden.length}/${hidden.n} visible${hidden.hidden.length ? "; hidden: " + hidden.hidden.join(" | ") : ""}`);
+check("landing residents figure",(await ev(`document.body.innerText.includes(qa.fmt(${R}.coverage.population_total))`)));
 
 // 3. tabs via nav links
 const tabs = { rede: "The collection network", cobertura: "Where new points should go", recolha: "Fixed rounds or collection on demand", pressupostos: "The assumptions behind every number" };

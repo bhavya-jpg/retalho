@@ -251,7 +251,8 @@ body::before {
     transform var(--dur-3) var(--ease-out);
   transition-delay: var(--reveal-delay, 0ms);
 }
-.motion-ok .reveal.is-in {
+.motion-ok .reveal.is-in,
+.motion-ok .is-in > .reveal {
   opacity: 1;
   transform: none;
 }
