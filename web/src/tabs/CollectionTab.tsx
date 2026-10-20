@@ -13,6 +13,7 @@ import { median } from "../lib/stats";
 import { useTokens } from "../lib/tokens";
 import type { CostParams, Range, Results } from "../types";
 import { WeaveGrid } from "../components/Diagrams";
+import { MotionToggle } from "../components/Motion";
 import { collectionWeave, sharedOrder } from "../lib/weave";
 import { BenchmarkCard } from "./BenchmarkCard";
 import { toPoints } from "./NetworkTab";
@@ -290,7 +291,7 @@ function RoutesCard({ r, profile }: { r: Results; profile: string }) {
             <div className="mb-3"><Empty>No collection in week {wk.week} of this run: no container was projected to reach the {fmt(r.meta.threshold_T * 100)}% threshold.</Empty></div>
           )}
           <MapView boundary={r.network.boundary} layers={layers} routes={routes} height={440} selectedId={selected} onSelect={setSelected}
-                   drawKey={`${scenario}-${week}-${run.seed}`} label={`Map of week ${wk.week} routes, scenario ${scenario}`} />
+                   drawKey={`${scenario}-${week}-${run.seed}`} label={`Map of week ${wk.week} routes, scenario ${scenario}`} trucks />
           <MapLegend items={[
             { color, label: `Street route (${scenario})`, line: true },
             ...(approx.length ? [{ color, label: "Approximate straight segments", line: true, dashed: true }] : []),
@@ -298,6 +299,10 @@ function RoutesCard({ r, profile }: { r: Results; profile: string }) {
             { color: t.candidate, label: "Not collected", hollow: true },
             { color: t.ink, label: "Depot (assumed)", square: true },
           ]} />
+          <div className="mt-2 flex flex-wrap items-center gap-3">
+            <MotionToggle />
+            <span className="text-xs text-muted">The moving marker drives each truck-day in its visiting order (illustration of the route, not live tracking).</span>
+          </div>
           <p className="mt-2 text-xs text-muted">
             {wk.routes.length === 0 ? null : approx.length === 0
               ? <>Lines follow the street network (OSRM route geometry for the same stop order, © OpenStreetMap contributors). Click a stop for details.</>

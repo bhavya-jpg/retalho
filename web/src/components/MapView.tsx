@@ -4,7 +4,7 @@
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useEffect, useRef, useState } from "react";
-import { prefersReducedMotion } from "../lib/motion";
+import { prefersReducedMotion, useMotion } from "../lib/motion";
 
 export type MapPoint = { id: string; lat: number; lon: number; label: string };
 export type PointLayer = {
@@ -20,10 +20,12 @@ export const MAP_FOREST = "#355447";
 const MAP_BOUNDARY = "#4a4a42";
 const MAP_RING = "#faf8f2";
 
-export function MapView({ boundary, layers, routes = [], height = 440, selectedId, onSelect, drawKey, label = "Map" }: {
+export function MapView({ boundary, layers, routes = [], height = 440, selectedId, onSelect, drawKey, label = "Map", trucks = false }: {
   boundary: GeoJSON.FeatureCollection; layers: PointLayer[]; routes?: RouteLine[]; height?: number;
-  selectedId?: string | null; onSelect?: (id: string | null) => void; drawKey?: string; label?: string;
+  selectedId?: string | null; onSelect?: (id: string | null) => void; drawKey?: string; label?: string; trucks?: boolean;
 }) {
+  const { live } = useMotion();
+  const visible = useRef(true);
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
   const overlay = useRef<L.LayerGroup | null>(null);
@@ -52,7 +54,9 @@ export function MapView({ boundary, layers, routes = [], height = 440, selectedI
     // Refit when the container gets its real size (first layout, window resize) unless the user has moved the map.
     const ro = new ResizeObserver(() => { m.invalidateSize(); if (!userMoved) fit(); });
     ro.observe(el.current);
-    return () => { ro.disconnect(); m.remove(); map.current = null; };
+    const io = new IntersectionObserver(([e]) => { visible.current = e.isIntersecting; });
+    io.observe(el.current);
+    return () => { ro.disconnect(); io.disconnect(); m.remove(); map.current = null; };
   }, [boundary]);
 
   useEffect(() => {
@@ -103,6 +107,40 @@ export function MapView({ boundary, layers, routes = [], height = 440, selectedI
       }
     }
   }, [layers, routes, selectedId, onSelect, drawKey]);
+
+  // A truck marker drives each route in its visiting order: on screen, tab visible, motion allowed only.
+  useEffect(() => {
+    const group = overlay.current;
+    if (!group || !trucks || !live || routes.length === 0) return;
+    const movers = routes.filter((r) => r.coords.length > 1).map((r, i) => {
+      const k = Math.cos((r.coords[0][0] * Math.PI) / 180);
+      const cum = [0];
+      for (let j = 1; j < r.coords.length; j++) {
+        const [a, b] = [r.coords[j - 1], r.coords[j]];
+        cum.push(cum[j - 1] + Math.hypot(b[0] - a[0], (b[1] - a[1]) * k));
+      }
+      const marker = L.circleMarker(r.coords[0], { radius: 6, color: MAP_RING, weight: 2.5, fillColor: r.color, fillOpacity: 1,
+                                                   interactive: false, className: "truck" }).addTo(group);
+      return { pts: r.coords, cum, total: cum[cum.length - 1] || 1, marker, offset: i * 0.37 };
+    });
+    const period = 16000;
+    const start = performance.now() + 800; // after the route has drawn
+    let raf = 0;
+    const tick = (now: number) => {
+      raf = requestAnimationFrame(tick);
+      if (now < start || !visible.current || document.hidden) return;
+      for (const mv of movers) {
+        const d = (((now - start) / period + mv.offset) % 1) * mv.total;
+        let lo = 0, hi = mv.cum.length - 1;
+        while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (mv.cum[mid] < d) lo = mid; else hi = mid; }
+        const seg = mv.cum[hi] - mv.cum[lo] || 1, f = (d - mv.cum[lo]) / seg;
+        const [a, b] = [mv.pts[lo], mv.pts[hi]];
+        mv.marker.setLatLng([a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]);
+      }
+    };
+    raf = requestAnimationFrame(tick);
+    return () => { cancelAnimationFrame(raf); movers.forEach((mv) => group.removeLayer(mv.marker)); };
+  }, [routes, trucks, live, layers, selectedId]);
 
   return (
     <div className="relative">

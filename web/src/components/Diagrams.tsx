@@ -1,13 +1,15 @@
 // Original diagrams in the Retalho textile language. Data-driven where the data exists (WeaveGrid);
 // otherwise explicitly conceptual and labelled as such.
-import { useReveal } from "../lib/motion";
+import { useMotion, useReveal } from "../lib/motion";
 import type { Weave } from "../lib/weave";
 
 /** The collection weave: rows are containers, columns are weeks; a weft float is a collection. */
-export function WeaveGrid({ weave, order, colour, label, compact = false, highlightWeek, highlightId }: {
+export function WeaveGrid({ weave, order, colour, label, compact = false, highlightWeek, highlightId, playhead = false, onRowHover }: {
   weave: Weave; order: string[]; colour: string; label: string; compact?: boolean; highlightWeek?: number; highlightId?: string | null;
+  playhead?: boolean; onRowHover?: (id: string | null) => void;
 }) {
   const { ref, cls } = useReveal<SVGSVGElement>(0.15);
+  const { live } = useMotion();
   const rowH = compact ? 9 : 12, colW = compact ? 38 : 52, padL = compact ? 4 : 54, padT = 20;
   const rows = order.map((id) => weave.ids.indexOf(id));
   const w = padL + weave.weeks.length * colW + 4;
@@ -24,6 +26,14 @@ export function WeaveGrid({ weave, order, colour, label, compact = false, highli
           <rect x={padL - 2} y={padT + order.indexOf(highlightId) * rowH} width={weave.weeks.length * colW + 4} height={rowH} rx="3"
                 fill="none" stroke="var(--ink)" strokeWidth="1.2" />
         )}
+        {/* playhead: steps week by week, so the calendar reads as time passing */}
+        {playhead && live && (
+          <rect y={padT - 4} width={colW} height={h - padT} rx="4" fill="var(--ink)" fillOpacity="0.05" stroke="var(--ink)"
+                strokeOpacity="0.35" strokeWidth="1" x={padL} aria-hidden>
+            <animate attributeName="x" dur={`${weave.weeks.length * 1.6}s`} begin="1.2s" repeatCount="indefinite" calcMode="discrete"
+                     values={weave.weeks.map((_, c) => padL + c * colW).join(";")} />
+          </rect>
+        )}
         {weave.weeks.map((wk, c) => (
           <text key={wk} x={padL + c * colW + colW / 2} y={12} textAnchor="middle" fontSize="10" fill="var(--muted)"
                 fontFamily="var(--font-mono)">W{wk}</text>
@@ -34,7 +44,9 @@ export function WeaveGrid({ weave, order, colour, label, compact = false, highli
                 stroke="var(--flax)" strokeWidth="1.4" />
         )))}
         {rows.map((ri, r) => (
-          <g key={order[r]}>
+          <g key={order[r]} onMouseEnter={onRowHover ? () => onRowHover(order[r]) : undefined}
+             onMouseLeave={onRowHover ? () => onRowHover(null) : undefined}>
+            {onRowHover && <rect x={0} y={padT + r * rowH} width={w} height={rowH} fill="transparent" />}
             {!compact && (
               <text x={padL - 6} y={padT + r * rowH + rowH * 0.72} textAnchor="end" fontSize="8.5" fill="var(--muted)" fontFamily="var(--font-mono)">
                 {order[r].replace(/^OSM-/, "").slice(-8)}
@@ -95,6 +107,7 @@ export function JourneyDiagram() {
 
 /** Real pipeline stages, from inputs to this page. */
 export function PipelineDiagram() {
+  const { live } = useMotion();
   const cols = [
     { h: "Inputs", items: ["OpenStreetMap roads", "OSM recycling points", "INE Census 2021", "assumptions.yaml"] },
     { h: "Pipeline (Python)", items: ["Road distances · OSRM", "Coverage · spopt MCLP", "4 weeks × 10 runs · VROOM", "Nearest-stop benchmark", "Street geometry · OSRM"] },
@@ -113,9 +126,14 @@ export function PipelineDiagram() {
             ))}
           </ul>
           {i < cols.length - 1 && (
-            <svg className="absolute right-0 top-9 hidden h-4 w-6 md:block" viewBox="0 0 24 16" aria-hidden>
+            <svg className="absolute right-0 top-9 hidden h-5 w-7 md:block" viewBox="0 0 24 16" aria-hidden overflow="visible">
               <path d="M2 8 C 8 2, 14 14, 20 8" fill="none" stroke="var(--terracotta)" strokeWidth="1.6" className="thread-draw" pathLength={1} />
               <path d="M17 5l4 3-4 3" fill="none" stroke="var(--terracotta)" strokeWidth="1.6" />
+              {live && [0, 0.8].map((d) => (
+                <circle key={d} r="2.2" fill="var(--ink)">
+                  <animateMotion dur="1.6s" begin={`${i * 0.35 + d}s`} repeatCount="indefinite" path="M2 8 C 8 2, 14 14, 20 8" />
+                </circle>
+              ))}
             </svg>
           )}
         </div>

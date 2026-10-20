@@ -280,6 +280,55 @@ body::before {
   opacity: 1;
   transform: none;
 }
+/* Ambient loops: paused by the page toggle (html.motion-paused) or reduced motion. */
+.motion-paused .loop,
+.motion-paused .loop * {
+  animation-play-state: paused !important;
+}
+@keyframes retalho-marquee {
+  to { transform: translateX(-50%); }
+}
+.marquee {
+  animation: retalho-marquee 60s linear infinite;
+}
+.selvedge:hover .marquee {
+  animation-play-state: paused;
+}
+@keyframes retalho-shuttle {
+  0% { transform: translateX(0); opacity: 0; }
+  12% { opacity: 0.85; }
+  88% { opacity: 0.85; }
+  100% { transform: translateX(var(--travel, 160px)); opacity: 0; }
+}
+.shuttle {
+  animation: retalho-shuttle 3.6s var(--ease-in-out) infinite;
+  animation-delay: var(--shuttle-delay, 0s);
+}
+@keyframes retalho-ripple {
+  0% { transform: scale(0.5); opacity: 0.55; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+.ripple {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: retalho-ripple 3.2s var(--ease-out) infinite;
+  animation-delay: var(--ripple-delay, 0s);
+}
+@keyframes retalho-tab-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+.motion-ok .tab-enter {
+  animation: retalho-tab-in var(--dur-3) var(--ease-out) both;
+}
+.parallax {
+  transition: transform var(--dur-3) var(--ease-out);
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .marquee, .shuttle, .ripple { animation: none !important; }
+  .parallax { transform: none !important; }
+}
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

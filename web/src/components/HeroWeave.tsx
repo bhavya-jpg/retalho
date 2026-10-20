@@ -1,9 +1,9 @@
 // Hero illustration built from real data: a woven swatch whose weft threads leave the cloth and run
 // to real collection points inside the real Guimarães boundary, with one real simulated route
 // (OSRM street geometry) drawn as a thread. Animates once; static under reduced motion.
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { boundsOf, makeProjection, outerRings, pathD, thin, type LonLat } from "../lib/geo";
-import { useReveal } from "../lib/motion";
+import { useMotion, useReveal } from "../lib/motion";
 import { decodePolyline } from "../lib/polyline";
 import type { Results } from "../types";
 
@@ -28,6 +28,27 @@ function pickRoute(r: Results) {
 
 export function HeroWeave({ r }: { r: Results | null }) {
   const { ref, cls } = useReveal<SVGSVGElement>(0.1);
+  const { live } = useMotion();
+  // Pointer depth: the cloth and the city drift a few pixels apart (fine pointers only, never under reduced motion).
+  const [tilt, setTilt] = useState<[number, number]>([0, 0]);
+  const frame = useRef(0);
+  useEffect(() => {
+    if (!live || !window.matchMedia("(hover: hover) and (pointer: fine)").matches) { setTilt([0, 0]); return; }
+    const onMove = (e: PointerEvent) => {
+      cancelAnimationFrame(frame.current);
+      frame.current = requestAnimationFrame(() => {
+        const b = ref.current?.getBoundingClientRect();
+        if (!b) return;
+        const x = Math.max(-1, Math.min(1, (e.clientX - (b.left + b.width / 2)) / (b.width / 2)));
+        const y = Math.max(-1, Math.min(1, (e.clientY - (b.top + b.height / 2)) / (b.height / 2)));
+        setTilt([x, y]);
+      });
+    };
+    window.addEventListener("pointermove", onMove, { passive: true });
+    return () => { window.removeEventListener("pointermove", onMove); cancelAnimationFrame(frame.current); };
+  }, [live, ref]);
+  const clothShift = { transform: `translate(${-tilt[0] * 7}px, ${-tilt[1] * 5}px)` };
+  const cityShift = { transform: `translate(${tilt[0] * 9}px, ${tilt[1] * 6}px)` };
   const model = useMemo(() => {
     if (!r) return null;
     const rings = outerRings(r.network.boundary).map((ring) => thin(ring, 420));
@@ -59,6 +80,7 @@ export function HeroWeave({ r }: { r: Results | null }) {
 
   return (
     <svg ref={ref} viewBox={`0 0 ${W} ${H}`} className={`h-auto w-full ${cls}`} role="img" aria-label={label}>
+      <g className="parallax" style={clothShift}>
       {/* the cloth */}
       <g className="pop" style={{ ["--pop-delay" as string]: "0ms" }}>
         <rect x={WEAVE.x0} y={WEAVE.y0} width={WEAVE.x1 - WEAVE.x0} height={WEAVE.y1 - WEAVE.y0} rx="6" fill="var(--surface)" stroke="var(--border)" />
@@ -82,9 +104,16 @@ export function HeroWeave({ r }: { r: Results | null }) {
           ))}
         </g>
       ))}
+      {/* the shuttle: a glint passes along each weft thread in turn */}
+      {live && Array.from({ length: N }, (_, j) => (
+        <rect key={`s${j}`} className="loop shuttle" x={WEAVE.x0 + 4} y={gy(j) - 2.5} width="26" height="5" rx="2.5"
+              fill="var(--surface)" opacity="0"
+              style={{ ["--shuttle-delay" as string]: `${2.2 + j * 0.5}s`, ["--travel" as string]: `${WEAVE.x1 - WEAVE.x0 - 34}px` }} />
+      ))}
+      </g>
 
       {model && (
-        <>
+        <g className="parallax" style={cityShift}>
           {/* the city */}
           {model.rings.map((d, i) => (
             <path key={i} d={d} fill="var(--surface)" fillOpacity="0.55" stroke="var(--ink-2)" strokeOpacity="0.5" strokeWidth="1.2"
@@ -105,7 +134,7 @@ export function HeroWeave({ r }: { r: Results | null }) {
           {/* one real simulated route, as a thread with a light casing */}
           <path d={model.routeD} fill="none" stroke="var(--surface)" strokeWidth="6" strokeLinejoin="round" strokeLinecap="round"
                 className="thread-draw" pathLength={1} style={{ ["--draw-delay" as string]: "1000ms" }} />
-          <path d={model.routeD} fill="none" stroke="var(--series-a)" strokeWidth="2.4" strokeLinejoin="round" strokeLinecap="round"
+          <path id="hero-route" d={model.routeD} fill="none" stroke="var(--series-a)" strokeWidth="2.4" strokeLinejoin="round" strokeLinecap="round"
                 strokeDasharray={model.approximate ? "6 6" : undefined}
                 className={model.approximate ? "" : "thread-draw"} pathLength={model.approximate ? undefined : 1}
                 style={{ ["--draw-delay" as string]: "1000ms", transitionDuration: "1600ms" }} />
@@ -120,7 +149,20 @@ export function HeroWeave({ r }: { r: Results | null }) {
           <g className="pop" style={{ ["--pop-delay" as string]: "1000ms" }}>
             <rect x={model.depot[0] - 6} y={model.depot[1] - 6} width="12" height="12" rx="2" fill="var(--ink)" stroke="var(--surface)" strokeWidth="2" />
           </g>
-        </>
+          {/* the collection truck drives the real route, once the threads have finished drawing */}
+          {live && model.routeD && (
+            <g aria-hidden>
+              {[{ r: 11, o: 0.16 }, { r: 5, o: 1 }].map(({ r: rad, o }) => (
+                <circle key={rad} r={rad} fill="var(--terracotta)" stroke={o === 1 ? "var(--surface)" : "none"} strokeWidth="2" opacity="0">
+                  <set attributeName="opacity" to={String(o)} begin="2.9s" fill="freeze" />
+                  <animateMotion dur="18s" begin="2.9s" repeatCount="indefinite" rotate="auto" keyTimes="0;1" keyPoints="0;1" calcMode="linear">
+                    <mpath href="#hero-route" />
+                  </animateMotion>
+                </circle>
+              ))}
+            </g>
+          )}
+        </g>
       )}
     </svg>
   );
