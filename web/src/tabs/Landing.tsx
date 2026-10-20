@@ -3,7 +3,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import { Badge } from "../components/Badge";
 import { JourneyDiagram, OrderDiagram, PipelineDiagram, WeaveGrid } from "../components/Diagrams";
 import { HeroWeave } from "../components/HeroWeave";
-import { CountUp, MotionToggle, Selvedge } from "../components/Motion";
+import { CountUp, Selvedge } from "../components/Motion";
 import { useMotion } from "../lib/motion";
 import { Reveal, SectionHead, Swatch } from "../components/Textile";
 import { benchmarkView } from "../lib/benchmark";
@@ -120,8 +120,7 @@ export function Landing({ r, costs, go }: { r: Results; costs: CostParams; go: G
           </div>
           <div className="relative">
             <HeroWeave r={r} />
-            <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-              <MotionToggle />
+            <div className="mt-2">
               <p className="text-right text-[11px] text-muted">
                 Real boundary, points and one simulated route ({synthetic ? "synthetic data" : "OSM · INE"}). The moving dot follows that route.
               </p>

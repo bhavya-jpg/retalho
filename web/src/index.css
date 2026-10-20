@@ -241,8 +241,8 @@ body::before {
 }
 
 /* ---------------------------------------------------------------- motion */
-/* Content is visible by default. Reveals only hide content when JS has
-   opted in (html.motion-ok) and the user has not asked for reduced motion. */
+/* Content is visible by default. Reveals only hide content once JS has
+   opted in (html.motion-ok), so nothing depends on animation to be seen. */
 .motion-ok .reveal {
   opacity: 0;
   transform: translateY(14px);
@@ -280,9 +280,7 @@ body::before {
   opacity: 1;
   transform: none;
 }
-/* Ambient loops. html.motion-off is set when the visitor's preference resolves to "off":
-   by default that follows the system's reduced-motion setting, and the page's
-   Play / Pause animations control overrides it either way (src/lib/motion.ts). */
+/* Ambient loops: always on (product decision; see src/lib/motion.ts). */
 @keyframes retalho-marquee {
   to { transform: translateX(-50%); }
 }
@@ -322,29 +320,6 @@ body::before {
 .parallax {
   transition: transform var(--dur-3) var(--ease-out);
   will-change: transform;
-}
-.motion-off .loop,
-.motion-off .loop * {
-  animation-play-state: paused !important;
-}
-.motion-off .marquee,
-.motion-off .shuttle,
-.motion-off .ripple {
-  animation: none !important;
-}
-.motion-off .parallax {
-  transform: none !important;
-}
-html.motion-off {
-  scroll-behavior: auto;
-}
-.motion-off *,
-.motion-off *::before,
-.motion-off *::after {
-  animation-duration: 1ms !important;
-  animation-iteration-count: 1 !important;
-  transition-duration: 1ms !important;
-  transition-delay: 0ms !important;
 }
 
 @layer components {

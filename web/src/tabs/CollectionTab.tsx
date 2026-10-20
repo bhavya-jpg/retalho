@@ -13,7 +13,6 @@ import { median } from "../lib/stats";
 import { useTokens } from "../lib/tokens";
 import type { CostParams, Range, Results } from "../types";
 import { WeaveGrid } from "../components/Diagrams";
-import { MotionToggle } from "../components/Motion";
 import { collectionWeave, sharedOrder } from "../lib/weave";
 import { BenchmarkCard } from "./BenchmarkCard";
 import { toPoints } from "./NetworkTab";
@@ -299,8 +298,7 @@ function RoutesCard({ r, profile }: { r: Results; profile: string }) {
             { color: t.candidate, label: "Not collected", hollow: true },
             { color: t.ink, label: "Depot (assumed)", square: true },
           ]} />
-          <div className="mt-2 flex flex-wrap items-center gap-3">
-            <MotionToggle />
+          <div className="mt-2">
             <span className="text-xs text-muted">The moving marker drives each truck-day in its visiting order (illustration of the route, not live tracking).</span>
           </div>
           <p className="mt-2 text-xs text-muted">

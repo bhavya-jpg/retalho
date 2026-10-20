@@ -106,7 +106,7 @@ All of these are implemented and tested.
 **Product**
 - **Landing story** with a hero drawn from real data and original textile diagrams.
 - **Light and dark themes,** responsive down to 390 px, with no horizontal scrolling.
-- **Reduced-motion support.** Content is never hidden without JavaScript.
+- **Always-on motion.** Animations run continuously by design, and content never depends on animation to be visible.
 - **Single-file offline build** for a presentation laptop, with the data and fonts embedded.
 
 ## Visual design
@@ -134,8 +134,8 @@ The visual direction is **"tecido urbano" (urban fabric)**: the city's streets a
 | Lines and rules | `--flax`, `--border` | `#D8C8AC` | Woven grid, stitched seams |
 
 - **Type.** Instrument Serif for display, IBM Plex Sans for the interface, IBM Plex Mono for ids, units and provenance. All OFL-1.1 and self-hosted.
-- **Motion.** 150 / 300 / 600 / 900 ms tokens. Threads draw once, reveals run once, and nothing loops except the loading indicator.
-- **Accessibility.** An axe-core audit (WCAG 2.1 A/AA and best practice) of all five views in both themes reports no violations. Strategies are always identified by label as well as colour, and the map has keyboard-accessible stop lists.
+- **Motion.** 150 / 300 / 600 / 900 ms tokens. Threads draw and reveals run once. Ambient loops (the hero truck, the shuttle glints, the ribbon, site ripples, the calendar playhead, pipeline packets and trucks on the map) are always on. There is no pause control, and the system's reduced-motion setting is not applied: a deliberate product choice that does not meet WCAG 2.2.2.
+- **Accessibility.** An axe-core audit (WCAG 2.1 A/AA and best practice) of all five views in both themes reports no violations. That automated audit does not cover the pause requirement for moving content above. Strategies are always identified by label as well as colour, and the map has keyboard-accessible stop lists.
 
 The logo is an original woven square whose loose thread leaves the cloth as a route and ends at a collection point. It doubles as the favicon.
 

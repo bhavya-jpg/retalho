@@ -1,24 +1,7 @@
-// Shared motion controls and effects. Everything here is static under reduced motion or when paused.
+// Shared motion effects.
 import type { ReactNode } from "react";
-import { useCountUp, useMotion, useReveal } from "../lib/motion";
+import { useCountUp, useReveal } from "../lib/motion";
 import { Swatch, type SwatchKind } from "./Textile";
-
-/** Play / pause every animation on the page (WCAG 2.2.2). Defaults to the system's reduced-motion
- *  setting; the visitor's choice here overrides it and is remembered. */
-export function MotionToggle({ className = "" }: { className?: string }) {
-  const { live, reduced, pref, toggle } = useMotion();
-  const paused = !live;
-  return (
-    <button type="button" onClick={toggle} aria-pressed={paused}
-            title={paused && reduced && pref === "auto" ? "Animations are off because your system asks for reduced motion. Click to turn them on." : undefined}
-            className={`inline-flex h-8 items-center gap-1.5 ${paused ? "border-accent text-accent-text" : ""} rounded-[var(--r-pill)] border border-line-strong bg-surface px-3 text-xs text-ink-2 transition-colors duration-[var(--dur-1)] hover:border-ink hover:text-ink ${className}`}>
-      <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden>
-        {paused ? <path d="M3 1.5v9l7-4.5z" fill="currentColor" /> : <path d="M3 1.5h2v9H3zM7 1.5h2v9H7z" fill="currentColor" />}
-      </svg>
-      {paused ? "Play animations" : "Pause animations"}
-    </button>
-  );
-}
 
 /** A number that counts up once when it scrolls into view. Screen readers get the final value. */
 export function CountUp({ value, format, className = "" }: { value: number; format: (x: number) => string; className?: string }) {

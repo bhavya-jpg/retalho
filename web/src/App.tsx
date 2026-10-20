@@ -1,7 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Badge } from "./components/Badge";
 import { LogoMark, Wordmark } from "./components/Brand";
-import { MotionToggle } from "./components/Motion";
 import { AssumptionsTab } from "./tabs/AssumptionsTab";
 import { CollectionTab } from "./tabs/CollectionTab";
 import { CoverageTab } from "./tabs/CoverageTab";
@@ -279,7 +278,6 @@ function Footer({ r }: { r: Results }) {
             source commit {r.meta.git_commit}<br />
             {r.meta.seeds.length} runs × {r.meta.horizon_weeks} weeks · {r.meta.data_source} data
           </p>
-          <MotionToggle className="mt-4" />
         </div>
         <div>
           <p className="eyebrow">Data</p>
