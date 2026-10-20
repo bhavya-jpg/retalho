@@ -10,11 +10,11 @@ import "@fontsource/ibm-plex-mono/latin-400.css";
 import "@fontsource/ibm-plex-mono/latin-500.css";
 import "./index.css";
 import App from "./App";
+import { applyMotionClasses } from "./lib/motion";
 
-// Reveal animations are opt-in: without this class (no JS, or reduced motion) everything is visible.
-if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-  document.documentElement.classList.add("motion-ok");
-}
+// Reveals and ambient motion are opt-in: without JS, or when the visitor's motion preference resolves
+// to off (by default, the system's reduced-motion setting), everything is visible and still.
+applyMotionClasses();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

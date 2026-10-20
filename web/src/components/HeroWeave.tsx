@@ -155,7 +155,7 @@ export function HeroWeave({ r }: { r: Results | null }) {
               {[{ r: 11, o: 0.16 }, { r: 5, o: 1 }].map(({ r: rad, o }) => (
                 <circle key={rad} r={rad} fill="var(--terracotta)" stroke={o === 1 ? "var(--surface)" : "none"} strokeWidth="2" opacity="0">
                   <set attributeName="opacity" to={String(o)} begin="2.9s" fill="freeze" />
-                  <animateMotion dur="18s" begin="2.9s" repeatCount="indefinite" rotate="auto" keyTimes="0;1" keyPoints="0;1" calcMode="linear">
+                  <animateMotion dur="11s" begin="2.9s" repeatCount="indefinite" rotate="auto" keyTimes="0;1" keyPoints="0;1" calcMode="linear">
                     <mpath href="#hero-route" />
                   </animateMotion>
                 </circle>

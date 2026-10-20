@@ -4,7 +4,7 @@
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useEffect, useRef, useState } from "react";
-import { prefersReducedMotion, useMotion } from "../lib/motion";
+import { useMotion } from "../lib/motion";
 
 export type MapPoint = { id: string; lat: number; lon: number; label: string };
 export type PointLayer = {
@@ -63,7 +63,7 @@ export function MapView({ boundary, layers, routes = [], height = 440, selectedI
     const group = overlay.current;
     if (!group) return;
     group.clearLayers();
-    const animate = drawKey !== undefined && drawKey !== lastDraw.current && !prefersReducedMotion();
+    const animate = drawKey !== undefined && drawKey !== lastDraw.current && live;
     lastDraw.current = drawKey;
     for (const r of routes) {
       // A light casing under each route keeps it legible on the map, like a thread on cloth.
@@ -106,7 +106,7 @@ export function MapView({ boundary, layers, routes = [], height = 440, selectedI
         marker.addTo(group);
       }
     }
-  }, [layers, routes, selectedId, onSelect, drawKey]);
+  }, [layers, routes, selectedId, onSelect, drawKey, live]);
 
   // A truck marker drives each route in its visiting order: on screen, tab visible, motion allowed only.
   useEffect(() => {

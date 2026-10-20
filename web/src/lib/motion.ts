@@ -1,7 +1,55 @@
 import { useEffect, useRef, useState } from "react";
 
-export const prefersReducedMotion = () =>
+// ---------------------------------------------------------------- motion preference
+// Stored preference: "auto" follows the system's reduced-motion setting, "on" / "off" are the
+// visitor's explicit choice from the Play / Pause animations control (WCAG 2.2.2: moving content
+// can be paused; and a visitor who wants the animations can turn them on despite the default).
+export type MotionPref = "auto" | "on" | "off";
+const PREF_KEY = "retalho-motion";
+const EVENT = "retalho-motion";
+
+export const systemReducesMotion = () =>
   typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+export function readMotionPref(): MotionPref {
+  try {
+    const v = window.localStorage.getItem(PREF_KEY);
+    return v === "on" || v === "off" ? v : "auto";
+  } catch { return "auto"; }
+}
+
+export const resolveLive = (pref: MotionPref, reduced: boolean) => pref === "on" || (pref === "auto" && !reduced);
+
+/** Is ambient and reveal motion live right now? (Usable outside React.) */
+export const motionLive = () => resolveLive(readMotionPref(), systemReducesMotion());
+
+/** Apply the resolved state to <html>: motion-ok enables reveals, motion-off stops every animation. */
+export function applyMotionClasses(live = motionLive()) {
+  document.documentElement.classList.toggle("motion-ok", live);
+  document.documentElement.classList.toggle("motion-off", !live);
+}
+
+export function setMotionPref(pref: MotionPref) {
+  try { window.localStorage.setItem(PREF_KEY, pref); } catch { /* storage unavailable: session only */ }
+  applyMotionClasses();
+  window.dispatchEvent(new CustomEvent(EVENT, { detail: pref }));
+}
+
+/** live = animation should run now. */
+export function useMotion() {
+  const [pref, setPref] = useState(readMotionPref);
+  const [reduced, setReduced] = useState(systemReducesMotion);
+  useEffect(() => {
+    const onPref = (e: Event) => setPref((e as CustomEvent<MotionPref>).detail);
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const onMq = () => { setReduced(mq.matches); applyMotionClasses(); };
+    window.addEventListener(EVENT, onPref);
+    mq.addEventListener("change", onMq);
+    return () => { window.removeEventListener(EVENT, onPref); mq.removeEventListener("change", onMq); };
+  }, []);
+  const live = resolveLive(pref, reduced);
+  return { live, pref, reduced, toggle: () => setMotionPref(live ? "off" : "on") };
+}
 
 /** Adds `is-in` to the element the first time it scrolls into view (once). Content stays visible if
  *  IntersectionObserver is missing or slow: a fallback timer reveals it anyway. */
@@ -11,7 +59,7 @@ export function useReveal<T extends Element>(threshold = 0.2) {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    if (!("IntersectionObserver" in window) || prefersReducedMotion()) {
+    if (!("IntersectionObserver" in window) || !motionLive()) {
       setInView(true);
       return;
     }
@@ -26,39 +74,6 @@ export function useReveal<T extends Element>(threshold = 0.2) {
     return () => { io.disconnect(); window.clearTimeout(fallback); };
   }, [threshold]);
   return { ref, inView, cls: inView ? "is-in" : "" };
-}
-
-// ---------------------------------------------------------------- continuous motion
-// Ambient loops (the hero truck, data packets, the calendar playhead, the map truck) run only when
-// the user has not asked for reduced motion and has not paused them. The pause choice is remembered
-// per browser and shared by every toggle on the page (WCAG 2.2.2: moving content can be paused).
-const PAUSE_KEY = "retalho-motion-paused";
-const EVENT = "retalho-motion";
-
-function readPaused(): boolean {
-  try { return window.localStorage.getItem(PAUSE_KEY) === "1"; } catch { return false; }
-}
-
-export function setMotionPaused(paused: boolean) {
-  try { window.localStorage.setItem(PAUSE_KEY, paused ? "1" : "0"); } catch { /* storage unavailable: session only */ }
-  document.documentElement.classList.toggle("motion-paused", paused);
-  window.dispatchEvent(new CustomEvent(EVENT, { detail: paused }));
-}
-
-/** live = ambient animation should run now. */
-export function useMotion() {
-  const [paused, setPaused] = useState(readPaused);
-  const [reduced, setReduced] = useState(prefersReducedMotion);
-  useEffect(() => {
-    document.documentElement.classList.toggle("motion-paused", paused);
-    const onToggle = (e: Event) => setPaused((e as CustomEvent<boolean>).detail);
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const onMq = () => setReduced(mq.matches);
-    window.addEventListener(EVENT, onToggle);
-    mq.addEventListener("change", onMq);
-    return () => { window.removeEventListener(EVENT, onToggle); mq.removeEventListener("change", onMq); };
-  }, [paused]);
-  return { live: !paused && !reduced, paused, reduced, toggle: () => setMotionPaused(!paused) };
 }
 
 /** Animate a number from 0 to `to` once, the first time it is visible. Final value is exact. */

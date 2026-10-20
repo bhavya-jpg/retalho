@@ -280,16 +280,14 @@ body::before {
   opacity: 1;
   transform: none;
 }
-/* Ambient loops: paused by the page toggle (html.motion-paused) or reduced motion. */
-.motion-paused .loop,
-.motion-paused .loop * {
-  animation-play-state: paused !important;
-}
+/* Ambient loops. html.motion-off is set when the visitor's preference resolves to "off":
+   by default that follows the system's reduced-motion setting, and the page's
+   Play / Pause animations control overrides it either way (src/lib/motion.ts). */
 @keyframes retalho-marquee {
   to { transform: translateX(-50%); }
 }
 .marquee {
-  animation: retalho-marquee 60s linear infinite;
+  animation: retalho-marquee 38s linear infinite;
 }
 .selvedge:hover .marquee {
   animation-play-state: paused;
@@ -301,7 +299,7 @@ body::before {
   100% { transform: translateX(var(--travel, 160px)); opacity: 0; }
 }
 .shuttle {
-  animation: retalho-shuttle 3.6s var(--ease-in-out) infinite;
+  animation: retalho-shuttle 3.2s var(--ease-in-out) infinite;
   animation-delay: var(--shuttle-delay, 0s);
 }
 @keyframes retalho-ripple {
@@ -325,22 +323,28 @@ body::before {
   transition: transform var(--dur-3) var(--ease-out);
   will-change: transform;
 }
-@media (prefers-reduced-motion: reduce) {
-  .marquee, .shuttle, .ripple { animation: none !important; }
-  .parallax { transform: none !important; }
+.motion-off .loop,
+.motion-off .loop * {
+  animation-play-state: paused !important;
 }
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-  *,
-  *::before,
-  *::after {
-    animation-duration: 1ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 1ms !important;
-    transition-delay: 0ms !important;
-  }
+.motion-off .marquee,
+.motion-off .shuttle,
+.motion-off .ripple {
+  animation: none !important;
+}
+.motion-off .parallax {
+  transform: none !important;
+}
+html.motion-off {
+  scroll-behavior: auto;
+}
+.motion-off *,
+.motion-off *::before,
+.motion-off *::after {
+  animation-duration: 1ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 1ms !important;
+  transition-delay: 0ms !important;
 }
 
 @layer components {
