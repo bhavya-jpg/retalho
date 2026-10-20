@@ -81,7 +81,28 @@ def _read(name: str) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def build_results(clean: dict, a: dict, m: dict, sim: dict, be: dict, cov: dict, benchmarks: list) -> dict:
+def route_geometry_for(sim: dict, geo: dict | None) -> dict | None:
+    """Geometry block for results.json, or None (the app then draws labelled straight segments).
+    Refuses geometry built for a different matrix, or one that misses any simulated route."""
+    if geo is None:
+        return None
+    if geo.get("meta", {}).get("matrix_key") != sim["meta"]["matrix_key"]:
+        raise StaleError("route geometry was built for a different distance matrix; run `make geometry`")
+    keys = geo["route_keys"]
+    for profile in sim["scenarios"].values():
+        for policy in ("A", "B"):
+            for run in profile[policy]["per_seed"]:
+                for week in run["weeks"]:
+                    for route in week["routes"]:
+                        if "|".join(route["stop_ids"]) not in keys:
+                            raise StaleError("route geometry is missing simulated routes; run `make geometry`")
+    used = set(keys.values())
+    return {"data_version": geo["data_version"], "stats": geo["stats"], "matrix_check": geo.get("matrix_check"),
+            "route_keys": keys, "geometries": {k: g for k, g in geo["geometries"].items() if k in used}}
+
+
+def build_results(clean: dict, a: dict, m: dict, sim: dict, be: dict, cov: dict, benchmarks: list,
+                  geo: dict | None = None) -> dict:
     sha = fingerprint(a)
     problems = []
     for name, meta in (("simulation", sim["meta"]), ("breakeven", be["meta"])):
@@ -142,6 +163,7 @@ def build_results(clean: dict, a: dict, m: dict, sim: dict, be: dict, cov: dict,
         "scenarios": sim["scenarios"],
         "breakeven": {k: v for k, v in be.items() if k != "meta"},
         "benchmarks": benchmarks,
+        "route_geometry": route_geometry_for(sim, geo),
     }
 
 
@@ -226,7 +248,11 @@ def main(argv: list[str] | None = None) -> int:
         m = get_matrix(matrix_points(clean), sim["meta"]["distance_provider"],
                        detour_factor=a["detour_factor"]["value"], speed_kmh=a["fallback_speed_kmh"]["value"])
         benchmarks = yaml.safe_load(BENCHMARKS.read_text(encoding="utf-8")) or []
-        results = build_results(clean, a, m, sim, be, cov, benchmarks)
+        geo_path = OUT / "route_geometry.json"
+        geo = json.loads(geo_path.read_text(encoding="utf-8")) if geo_path.exists() else None
+        if geo is None:
+            print("NOTE: no out/route_geometry.json; the app will draw routes as straight segments (labelled).")
+        results = build_results(clean, a, m, sim, be, cov, benchmarks, geo)
         validate(results)
     except (StaleError, MatrixError) as e:
         print(f"ERROR: {e}", file=sys.stderr)

@@ -10,7 +10,7 @@ export type PointLayer = {
   name: string; points: MapPoint[]; color: string; radius: number;
   hollow?: boolean; square?: boolean; coverRadiusM?: number;
 };
-export type RouteLine = { coords: [number, number][]; color: string; label: string };
+export type RouteLine = { coords: [number, number][]; color: string; label: string; dashed?: boolean };
 
 const TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
 // The map is always a light "paper" (the OSM tiles are light in both themes), so map ink
@@ -58,7 +58,9 @@ export function MapView({ boundary, layers, routes = [], height = 440 }: {
     group.clearLayers();
     const ring = MAP_RING;
     for (const r of routes) {
-      L.polyline(r.coords, { color: r.color, weight: 2.5, opacity: 0.85, lineJoin: "round" })
+      // Dashed = approximate straight segments (no street geometry available for this route).
+      L.polyline(r.coords, { color: r.color, weight: r.dashed ? 2 : 3, opacity: 0.85, lineJoin: "round",
+                             dashArray: r.dashed ? "6 6" : undefined })
         .bindTooltip(r.label, { sticky: true }).addTo(group);
     }
     for (const layer of layers) {
@@ -92,13 +94,13 @@ export function MapView({ boundary, layers, routes = [], height = 440 }: {
   );
 }
 
-export function MapLegend({ items }: { items: { color: string; label: string; hollow?: boolean; square?: boolean; line?: boolean }[] }) {
+export function MapLegend({ items }: { items: { color: string; label: string; hollow?: boolean; square?: boolean; line?: boolean; dashed?: boolean }[] }) {
   return (
     <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-2">
       {items.map((i) => (
         <li key={i.label} className="flex items-center gap-1.5">
           {i.line ? (
-            <span className="inline-block h-0.5 w-4 rounded" style={{ background: i.color }} />
+            <span className="inline-block h-0 w-4" style={{ borderTop: `${i.dashed ? 2 : 3}px ${i.dashed ? "dashed" : "solid"} ${i.color}` }} />
           ) : (
             <span
               className={`inline-block h-2.5 w-2.5 ${i.square ? "rounded-[2px]" : "rounded-full"}`}

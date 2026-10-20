@@ -7,6 +7,7 @@ import { Badge, type BadgeKind } from "../components/Badge";
 import { MAP_INK, MapLegend, MapView, type PointLayer, type RouteLine } from "../components/MapView";
 import { Card, Empty, Segmented, StatTile } from "../components/StatTile";
 import { breakevenCurve, compareScenarios } from "../lib/cost";
+import { routeDrawing } from "../lib/routes";
 import { eur, fmt, fmtRange, signedPct } from "../lib/format";
 import { median } from "../lib/stats";
 import { useTokens } from "../lib/tokens";
@@ -206,27 +207,34 @@ function RoutesCard({ r, profile }: { r: Results; profile: string }) {
   const wk = run.weeks[Math.min(week, run.weeks.length) - 1];
   const color = scenario === "A" ? t["series-a"] : t["series-b"];
 
-  const { layers, routes } = useMemo(() => {
+  const { layers, routes, approx } = useMemo(() => {
     const pts = collectionPoints(r);
     const at = new Map(pts.map((p) => [p.id, [p.lat, p.lon] as [number, number]]));
     const d = r.network.depot;
     const depot: [number, number] = [d.lat, d.lon];
     const served = new Set(wk.routes.flatMap((x) => x.stop_ids));
-    const routes: RouteLine[] = wk.routes.map((x, i) => ({
-      color, coords: [depot, ...x.stop_ids.map((id) => at.get(id)!), depot],
-      label: `Truck-day ${i + 1}: ${x.stop_ids.length} stops, ${fmt(x.km, 1)} km, ${fmt(x.kg)} kg`,
-    }));
+    const approx: string[] = [];
+    const routes: RouteLine[] = wk.routes.map((x, i) => {
+      const drawing = routeDrawing(x.stop_ids, at, depot, r.route_geometry ?? null);
+      if (drawing.approximate) approx.push(drawing.reason ?? "no road geometry");
+      return {
+        color, coords: drawing.coords, dashed: drawing.approximate,
+        label: `Truck-day ${i + 1}: ${x.stop_ids.length} stops, ${fmt(x.km, 1)} km by road, ${fmt(x.kg)} kg` +
+          (drawing.approximate ? "<br><i>Line drawn straight (approximate); km is still the road distance</i>" : ""),
+      };
+    });
     const layers: PointLayer[] = [
       { name: "Not collected this week", points: pts.filter((p) => !served.has(p.id)), color: t.candidate, radius: 4, hollow: true },
       { name: "Collected this week", points: pts.filter((p) => served.has(p.id)), color, radius: 5 },
       { name: "Depot", points: [{ id: d.id, lat: d.lat, lon: d.lon, label: `<b>${d.name}</b>` }], color: MAP_INK, radius: 6, square: true },
     ];
-    return { layers, routes };
+    return { layers, routes, approx };
   }, [r, wk, color, t]);
 
   return (
     <Card title="Collection routes"
-          subtitle={<>Scenario {scenario}, week {wk.week}, run {run.seed} of {runs.length}. Lines join stops in visiting order (straight segments, not street geometry).</>}
+          subtitle={<>Scenario {scenario}, week {wk.week}, run {run.seed} of {runs.length}. Stops in the optimised visiting order;
+            distances are road distances from the OSRM matrix.</>}
           actions={
             <div className="flex flex-wrap gap-2">
               <Segmented label="Scenario" value={scenario} onChange={setScenario} options={[{ value: "A", label: "A" }, { value: "B", label: "B" }]} />
@@ -243,12 +251,19 @@ function RoutesCard({ r, profile }: { r: Results; profile: string }) {
       )}
       <MapView boundary={r.network.boundary} layers={layers} routes={routes} height={400} />
       <MapLegend items={[
-        { color, label: `Route (${scenario})`, line: true },
+        { color, label: `Street route (${scenario})`, line: true },
+        ...(approx.length ? [{ color, label: "Approximate straight segments", line: true, dashed: true }] : []),
         { color, label: "Collected this week" },
         { color: t.candidate, label: "Not collected", hollow: true },
         { color: t.ink, label: "Depot", square: true },
       ]} />
-      <p className="mt-2 text-sm text-ink-2">
+      <p className="mt-2 text-xs text-muted">
+        {wk.routes.length === 0 ? null : approx.length === 0
+          ? <>Lines follow the street network (OSRM route geometry for the same stop order, © OpenStreetMap contributors).</>
+          : <>{approx.length} of {wk.routes.length} route{wk.routes.length === 1 ? "" : "s"} drawn as dashed straight segments
+              because street geometry is unavailable ({[...new Set(approx)].join("; ")}). Their km figures are still road distances.</>}
+      </p>
+      <p className="mt-1 text-sm text-ink-2">
         This week: <b className="text-ink">{wk.stops}</b> stops, <b className="text-ink">{fmt(wk.km, 1)} km</b>,{" "}
         {wk.truck_days} truck-day{wk.truck_days === 1 ? "" : "s"}, {fmt(wk.kg)} kg, {wk.overflow_container_days} overflow container-days.
       </p>

@@ -145,6 +145,25 @@
         }}
       }
     },
+    "route_geometry": {
+      "description": "Display-only street geometry per distinct stop sequence (S1). Null: draw labelled straight segments.",
+      "oneOf": [
+        {"type": "null"},
+        {"type": "object", "required": ["route_keys", "geometries", "stats"],
+         "properties": {
+           "route_keys": {"type": "object", "additionalProperties": {"type": "string"}},
+           "geometries": {"type": "object", "additionalProperties": {
+             "oneOf": [
+               {"type": "object", "required": ["status", "polyline6", "osrm_distance_m"],
+                "properties": {"status": {"const": "road"}, "polyline6": {"type": "string", "minLength": 1},
+                               "osrm_distance_m": {"type": "number", "minimum": 0}}},
+               {"type": "object", "required": ["status", "reason", "coords"],
+                "properties": {"status": {"const": "straight"}, "reason": {"type": "string"},
+                               "coords": {"type": "array", "minItems": 2}}}
+             ]}}
+         }}
+      ]
+    },
     "benchmarks": {
       "type": "array",
       "items": {"type": "object", "required": ["name", "metric", "value", "unit", "source_url"],

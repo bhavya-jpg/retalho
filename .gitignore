@@ -27,5 +27,6 @@ data/raw/vitrus/
 out/simulation.json
 out/breakeven.json
 out/coverage.json
+out/route_geometry.json
 web/dist-offline/
 web/*.tsbuildinfo

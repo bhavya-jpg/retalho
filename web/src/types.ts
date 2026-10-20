@@ -60,6 +60,15 @@ export type Results = {
   scenarios: Record<string, { A: Scenario; B: Scenario }>;
   breakeven: { points: BreakevenPoint[]; monotonicity_violations: unknown[]; cost_params: CostParams };
   benchmarks: { name: string; metric: string; value: number; unit: string; source_url: string; note?: string }[];
+  route_geometry?: RouteGeometry | null;
+};
+
+export type RouteGeometry = {
+  route_keys: Record<string, string>;
+  geometries: Record<string, { status: "road"; polyline6: string; osrm_distance_m: number }
+                            | { status: "straight"; reason: string; coords: [number, number][] }>;
+  stats: Record<string, number>;
+  data_version: string | null;
 };
 
 export type CostParams = { cost_per_km: number; crew_cost_per_h: number; fixed_cost_per_truck_day: number };
