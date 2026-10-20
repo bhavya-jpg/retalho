@@ -164,6 +164,21 @@
          }}
       ]
     },
+    "optimisation_benchmark": {
+      "description": "S2: Retalho routes vs nearest-stop baseline on identical weekly stops. Null: not computed.",
+      "oneOf": [
+        {"type": "null"},
+        {"type": "object", "required": ["baseline", "optimised", "cost_params", "scenarios"],
+         "properties": {
+           "baseline": {"const": "nearest_stop"},
+           "scenarios": {"type": "object", "additionalProperties": {"type": "object", "additionalProperties": {
+             "type": "object", "required": ["per_seed", "summary"],
+             "properties": {"per_seed": {"type": "array", "items": {
+               "type": "object", "required": ["seed", "valid", "optimised", "baseline", "improvement_cost_pct"],
+               "properties": {"improvement_cost_pct": {"type": ["number", "null"]}}}}}}}}
+         }}
+      ]
+    },
     "benchmarks": {
       "type": "array",
       "items": {"type": "object", "required": ["name", "metric", "value", "unit", "source_url"],

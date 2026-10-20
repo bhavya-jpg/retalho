@@ -12,6 +12,7 @@ import { eur, fmt, fmtRange, signedPct } from "../lib/format";
 import { median } from "../lib/stats";
 import { useTokens } from "../lib/tokens";
 import type { CostParams, Range, Results } from "../types";
+import { BenchmarkCard } from "./BenchmarkCard";
 import { toPoints } from "./NetworkTab";
 
 type Props = { r: Results; profile: string; setProfile: (p: string) => void; costs: CostParams };
@@ -87,6 +88,8 @@ export function CollectionTab({ r, profile, setProfile, costs }: Props) {
       </Card>
 
       <ComparisonTable r={r} profile={profile} cmp={cmp} />
+
+      <BenchmarkCard r={r} profile={profile} costs={costs} />
 
       <div className="grid gap-4 lg:grid-cols-5">
         <div className="lg:col-span-3"><RoutesCard r={r} profile={profile} /></div>

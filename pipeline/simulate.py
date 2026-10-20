@@ -74,7 +74,10 @@ def fingerprint(*parts) -> str:
     return h.hexdigest()[:16]
 
 
-def run_scenario(policy: str, draws: dict, containers: list[dict], m: dict, fleet: Fleet, threshold: float) -> dict:
+def run_scenario(policy: str, draws: dict, containers: list[dict], m: dict, fleet: Fleet, threshold: float,
+                 solver=solve_day) -> dict:
+    """`solver` routes each week's stops; the S2 benchmark passes the nearest-stop baseline here.
+    Which containers are emptied never depends on the solver, so every solver sees identical weeks."""
     ids = [c["id"] for c in containers]
     cap = np.array([c["capacity_kg"] for c in containers], dtype=float)
     base, weekly = draws["base"], draws["weekly"]
@@ -90,7 +93,7 @@ def run_scenario(policy: str, draws: dict, containers: list[dict], m: dict, flee
 
         stop_ids = [ids[i] for i in np.flatnonzero(collect)]
         kg = {ids[i]: float(fill[i] * cap[i]) for i in np.flatnonzero(collect)}
-        plan = solve_day(m, stop_ids, kg, fleet)  # raises InfeasibleError if any stop is left out
+        plan = solver(m, stop_ids, kg, fleet)  # raises InfeasibleError if any stop is left out
         fill[collect] = 0.0
 
         overflow_days = 0

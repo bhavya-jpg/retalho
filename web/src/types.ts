@@ -61,6 +61,18 @@ export type Results = {
   breakeven: { points: BreakevenPoint[]; monotonicity_violations: unknown[]; cost_params: CostParams };
   benchmarks: { name: string; metric: string; value: number; unit: string; source_url: string; note?: string }[];
   route_geometry?: RouteGeometry | null;
+  optimisation_benchmark?: OptimisationBenchmark | null;
+};
+
+export type BenchTotals = { km: number; travel_h: number; crew_h: number; truck_days: number; kg: number;
+                            stops: number; overflow_container_days: number };
+export type BenchRow = { seed: number; valid: boolean; optimised: BenchTotals; baseline: BenchTotals | null;
+                         improvement_cost_pct: number | null };
+export type OptimisationBenchmark = {
+  label: string; baseline: "nearest_stop"; optimised: string; cost_params: CostParams;
+  fleet: { vehicles: number; capacity_kg: number; shift_h: number; service_min_per_stop: number; speed_factor: number };
+  scenarios: Record<string, Record<"A" | "B", { per_seed: BenchRow[]; summary: { runs: number; valid_runs: number;
+    baseline_unserved_stops: number } }>>;
 };
 
 export type RouteGeometry = {

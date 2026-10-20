@@ -101,8 +101,19 @@ def route_geometry_for(sim: dict, geo: dict | None) -> dict | None:
             "route_keys": keys, "geometries": {k: g for k, g in geo["geometries"].items() if k in used}}
 
 
+def optimisation_benchmark_for(sim: dict, bench: dict | None, a: dict) -> dict | None:
+    """S2 block for results.json; refuses a benchmark built from other assumptions, matrix or simulation."""
+    if bench is None:
+        return None
+    meta = bench.get("meta", {})
+    if (meta.get("assumptions_sha") != fingerprint(a) or meta.get("matrix_key") != sim["meta"]["matrix_key"]
+            or meta.get("simulation_generated_at") != sim["meta"]["generated_at"]):
+        raise StaleError("optimisation benchmark is stale; run `make benchmark`")
+    return {k: v for k, v in bench.items() if k != "meta"}
+
+
 def build_results(clean: dict, a: dict, m: dict, sim: dict, be: dict, cov: dict, benchmarks: list,
-                  geo: dict | None = None) -> dict:
+                  geo: dict | None = None, bench: dict | None = None) -> dict:
     sha = fingerprint(a)
     problems = []
     for name, meta in (("simulation", sim["meta"]), ("breakeven", be["meta"])):
@@ -164,6 +175,7 @@ def build_results(clean: dict, a: dict, m: dict, sim: dict, be: dict, cov: dict,
         "breakeven": {k: v for k, v in be.items() if k != "meta"},
         "benchmarks": benchmarks,
         "route_geometry": route_geometry_for(sim, geo),
+        "optimisation_benchmark": optimisation_benchmark_for(sim, bench, a),
     }
 
 
@@ -252,7 +264,11 @@ def main(argv: list[str] | None = None) -> int:
         geo = json.loads(geo_path.read_text(encoding="utf-8")) if geo_path.exists() else None
         if geo is None:
             print("NOTE: no out/route_geometry.json; the app will draw routes as straight segments (labelled).")
-        results = build_results(clean, a, m, sim, be, cov, benchmarks, geo)
+        bench_path = OUT / "benchmark.json"
+        bench = json.loads(bench_path.read_text(encoding="utf-8")) if bench_path.exists() else None
+        if bench is None:
+            print("NOTE: no out/benchmark.json; the app will show the optimisation benchmark as unavailable.")
+        results = build_results(clean, a, m, sim, be, cov, benchmarks, geo, bench)
         validate(results)
     except (StaleError, MatrixError) as e:
         print(f"ERROR: {e}", file=sys.stderr)

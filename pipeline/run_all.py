@@ -12,7 +12,7 @@ import argparse
 import sys
 import time
 
-from pipeline import cost, coverage, export, geometry, matrix, simulate
+from pipeline import benchmark, cost, coverage, export, geometry, matrix, simulate
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -25,6 +25,7 @@ def main(argv: list[str] | None = None) -> int:
         ("coverage (MCLP)", coverage.main, []),  # before the simulation: it may collect proposed sites too
         ("four-week simulation (A vs B)", simulate.main, ["--provider", args.provider]),
         ("costs and break-even sweep", cost.main, ["--provider", args.provider]),
+        ("optimisation benchmark vs nearest-stop baseline", benchmark.main, ["--provider", args.provider]),
         ("route geometry (display only)", geometry.main, []),
         ("export results.json", export.main, []),
     ]

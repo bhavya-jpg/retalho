@@ -28,5 +28,6 @@ out/simulation.json
 out/breakeven.json
 out/coverage.json
 out/route_geometry.json
+out/benchmark.json
 web/dist-offline/
 web/*.tsbuildinfo

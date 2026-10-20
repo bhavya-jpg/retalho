@@ -2,7 +2,7 @@
 SOURCE ?= synthetic
 PY := uv run python
 
-.PHONY: help install check-env public-data data osrm osrm-build osrm-down matrix simulate cost coverage geometry export all test web web-build offline docker-check-env clean
+.PHONY: help install check-env public-data data osrm osrm-build osrm-down matrix simulate cost coverage benchmark geometry export all test web web-build offline docker-check-env clean
 
 help:
 	@echo "make install          install Python (uv) and web (npm) dependencies"
@@ -16,6 +16,7 @@ help:
 	@echo "make simulate         four-week A vs B simulation -> out/simulation.json"
 	@echo "make cost             cost comparison + break-even sweep -> out/breakeven.json"
 	@echo "make coverage         coverage of existing points and +N additions -> out/coverage.json"
+	@echo "make benchmark        Retalho routes vs nearest-stop baseline on identical stops -> out/benchmark.json"
 	@echo "make geometry         street-following route lines from OSRM (display only) -> out/route_geometry.json"
 	@echo "make export           assemble + validate out/results.json, copy to web/public/"
 	@echo "make all              data + every pipeline step + export, in one command"
@@ -64,6 +65,9 @@ cost:
 
 coverage:
 	$(PY) -m pipeline.coverage
+
+benchmark:
+	$(PY) -m pipeline.benchmark --provider $(PROVIDER)
 
 geometry:
 	$(PY) -m pipeline.geometry
