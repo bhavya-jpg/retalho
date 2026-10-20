@@ -1,9 +1,11 @@
 // Landing story (#inicio). Every figure is read from results.json and carries its label.
-import { useMemo, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Badge } from "../components/Badge";
 import { JourneyDiagram, OrderDiagram, PipelineDiagram, WeaveGrid } from "../components/Diagrams";
 import { HeroWeave } from "../components/HeroWeave";
-import { Reveal, SectionHead, Swatch, ThreadRule } from "../components/Textile";
+import { CountUp, MotionToggle, Selvedge } from "../components/Motion";
+import { useMotion } from "../lib/motion";
+import { Reveal, SectionHead, Swatch } from "../components/Textile";
 import { benchmarkView } from "../lib/benchmark";
 import { compareScenarios } from "../lib/cost";
 import { boundsOf, makeProjection, outerRings, pathD, thin, type LonLat } from "../lib/geo";
@@ -29,6 +31,7 @@ function Fact({ value, label }: { value: ReactNode; label: string }) {
 
 /** Static SVG of the real network: boundary, candidate sites, existing and proposed points. */
 function CityFigure({ r }: { r: Results }) {
+  const { live } = useMotion();
   const m = useMemo(() => {
     const rings = outerRings(r.network.boundary).map((ring) => thin(ring, 500));
     const P = makeProjection(boundsOf(rings.flat()), 560, 460, 10);
@@ -49,6 +52,8 @@ function CityFigure({ r }: { r: Results }) {
       {m.proposed.map(([x, y], i) => (
         <g key={`p${i}`} className="pop" style={{ ["--pop-delay" as string]: `${i * 60}ms` }}>
           <circle cx={x} cy={y} r="13" fill="var(--accent)" opacity=".12" />
+          {live && <circle cx={x} cy={y} r="6" fill="none" stroke="var(--accent)" strokeWidth="1.2" className="loop ripple"
+                           style={{ ["--ripple-delay" as string]: `${(i * 0.37) % 3.2}s` }} />}
           <circle cx={x} cy={y} r="4.6" fill="var(--accent)" stroke="var(--surface)" strokeWidth="1.8" />
         </g>
       ))}
@@ -72,6 +77,7 @@ export function Landing({ r, costs, go }: { r: Results; costs: CostParams; go: G
     } catch { return null; }
   }, [A, B, ids]);
   const cmp = useMemo(() => compareScenarios(A, B, costs), [A, B, costs]);
+  const [hoverRow, setHoverRow] = useState<string | null>(null);
   const bench = r.optimisation_benchmark?.scenarios[profile]?.A;
   const bv = useMemo(() => (bench ? benchmarkView(bench.per_seed, costs) : null), [bench, costs]);
   const counts = r.assumptions.reduce<Record<string, number>>((a, x) => ({ ...a, [x.source_type]: (a[x.source_type] ?? 0) + 1 }), {});
@@ -87,7 +93,7 @@ export function Landing({ r, costs, go }: { r: Results; costs: CostParams; go: G
         <div className="weave-fine pointer-events-none absolute inset-0 opacity-70 [mask-image:radial-gradient(ellipse_at_70%_40%,black,transparent_70%)]" aria-hidden />
         <div className="relative mx-auto grid max-w-[var(--w-content)] items-center gap-10 lg:grid-cols-[1.02fr_1fr]">
           <div>
-            <Reveal><p className="eyebrow">Textile collection planning · Guimarães · Hack4Guimarães 2035 · Challenge 5 TexVitrus</p></Reveal>
+            <Reveal><p className="eyebrow">Textile collection planning · Guimarães, Portugal</p></Reveal>
             <Reveal delay={80}>
               <h1 id="hero-title" className="font-display mt-5 text-[clamp(2.9rem,6.6vw,5.6rem)] leading-[0.95] text-ink">
                 Give every thread a <em className="text-terracotta-ink">better route</em>.
@@ -106,22 +112,25 @@ export function Landing({ r, costs, go }: { r: Results; costs: CostParams; go: G
               <button type="button" className="btn btn-ghost" onClick={() => scrollTo("material")}>See how it works</button>
             </Reveal>
             <Reveal delay={320} className="mt-10 grid max-w-xl grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4">
-              <Fact value={fmt(cov.population_total)} label={synthetic ? "residents (synthetic)" : "residents · INE 2021"} />
-              <Fact value={fmt(r.network.candidates.features.length)} label="candidate sites" />
-              <Fact value={fmt(r.network.containers.features.length)} label={synthetic ? "textile points (synthetic)" : "mapped textile points"} />
+              <Fact value={<CountUp value={cov.population_total} format={(x) => fmt(x)} />} label={synthetic ? "residents (synthetic)" : "residents · INE 2021"} />
+              <Fact value={<CountUp value={r.network.candidates.features.length} format={(x) => fmt(x)} />} label="candidate sites" />
+              <Fact value={<CountUp value={r.network.containers.features.length} format={(x) => fmt(x)} />} label={synthetic ? "textile points (synthetic)" : "mapped textile points"} />
               <Fact value={`4 × ${r.meta.seeds.length}`} label="weeks × simulated runs" />
             </Reveal>
           </div>
           <div className="relative">
             <HeroWeave r={r} />
-            <p className="mt-2 text-right text-[11px] text-muted">
-              Real boundary, points and one simulated route ({synthetic ? "synthetic data" : "OSM · INE"}). Thread colours are decorative.
-            </p>
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+              <MotionToggle />
+              <p className="text-right text-[11px] text-muted">
+                Real boundary, points and one simulated route ({synthetic ? "synthetic data" : "OSM · INE"}). The moving dot follows that route.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
-      <ThreadRule />
+      <Selvedge items={["Drop-off points", "Collection routes", "Four-week plans", "Coverage", "Operating costs", "Assumptions, visible"]} />
 
       {/* ------------------------------------------------ 01 material */}
       <section id="material" className="mx-auto w-full max-w-[var(--w-content)] scroll-mt-28 py-16 sm:py-24">
@@ -147,13 +156,13 @@ export function Landing({ r, costs, go }: { r: Results; costs: CostParams; go: G
               lede={<>A resident counts as covered within {fmt(cov.radius_m)} m, straight line, of a textile point. The optimiser
                 adds the sites that cover the most residents while keeping every existing point.</>} />
             <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-3">
-              <Reveal><p className="font-display text-5xl text-ink tabular">{pct(cov.existing.share, 0)}</p>
+              <Reveal><p className="font-display text-5xl text-ink tabular"><CountUp value={cov.existing.share} format={(x) => pct(x, 0)} /></p>
                 <p className="mt-1 text-sm text-ink-2">today{synthetic ? "" : ", OSM-mapped points only"}</p>
                 <div className="mt-2 flex flex-wrap gap-1">{(synthetic ? ["synthetic"] : ["measured"]).map((b) => <Badge key={b} kind={b as never} />)}</div></Reveal>
-              <Reveal delay={90}><p className="font-display text-5xl text-ink tabular">{pct(withNew.share, 0)}</p>
+              <Reveal delay={90}><p className="font-display text-5xl text-ink tabular"><CountUp value={withNew.share} format={(x) => pct(x, 0)} /></p>
                 <p className="mt-1 text-sm text-ink-2">with +{withNew.n_new} proposed sites</p>
                 <div className="mt-2"><Badge kind="simulated" /></div></Reveal>
-              <Reveal delay={180}><p className="font-display text-5xl text-ink tabular">{pct(cov.all_candidates.share, 0)}</p>
+              <Reveal delay={180}><p className="font-display text-5xl text-ink tabular"><CountUp value={cov.all_candidates.share} format={(x) => pct(x, 0)} /></p>
                 <p className="mt-1 text-sm text-ink-2">ceiling, every candidate</p>
                 <div className="mt-2"><Badge kind="simulated" /></div></Reveal>
             </div>
@@ -179,13 +188,15 @@ export function Landing({ r, costs, go }: { r: Results; costs: CostParams; go: G
         {weaves ? (
           <div className="mt-10 grid gap-8 md:grid-cols-2">
             <Reveal className="panel p-5"><p className="mb-3 flex items-center gap-2 text-sm font-medium text-ink"><span className="h-2.5 w-2.5 rounded-full bg-series-a" />A · fixed weekly</p>
-              <WeaveGrid weave={weaves.wa} order={weaves.order} colour="var(--series-a)" label="Scenario A, every container every week" /></Reveal>
+              <WeaveGrid weave={weaves.wa} order={weaves.order} colour="var(--series-a)" label="Scenario A, every container every week"
+                playhead highlightId={hoverRow} onRowHover={setHoverRow} /></Reveal>
             <Reveal delay={120} className="panel p-5"><p className="mb-3 flex items-center gap-2 text-sm font-medium text-ink"><span className="h-2.5 w-2.5 rounded-full bg-series-b" />B · demand-based</p>
-              <WeaveGrid weave={weaves.wb} order={weaves.order} colour="var(--series-b)" label="Scenario B, only when needed" /></Reveal>
+              <WeaveGrid weave={weaves.wb} order={weaves.order} colour="var(--series-b)" label="Scenario B, only when needed"
+                playhead highlightId={hoverRow} onRowHover={setHoverRow} /></Reveal>
           </div>
         ) : <p className="mt-8 text-sm text-muted">The collection pattern is unavailable for this dataset.</p>}
         <p className="mt-4 text-xs text-muted">
-          One simulated run (run 1, {profile} fill ≈ {fmt((means[profile]?.mean ?? 0) * 100)}% per week), on {net?.n_new ? `the planned network: ${net.existing.length} existing + ${net.n_new} proposed points` : "the existing points"}. Fill rates are assumptions.
+          Hover a row to follow one container in both strategies. One simulated run (run 1, {profile} fill ≈ {fmt((means[profile]?.mean ?? 0) * 100)}% per week), on {net?.n_new ? `the planned network: ${net.existing.length} existing + ${net.n_new} proposed points` : "the existing points"}. Fill rates are assumptions.
         </p>
       </section>
 
@@ -198,7 +209,7 @@ export function Landing({ r, costs, go }: { r: Results; costs: CostParams; go: G
           <div className="mt-10 grid gap-6 md:grid-cols-3">
             <Reveal className="seam-top pt-5">
               <p className="eyebrow">B vs A · operating cost</p>
-              <p className="font-display mt-2 text-5xl text-ink tabular">{cmp.savingCostPct ? signedPct(-cmp.savingCostPct.median) : "n/a"}</p>
+              <p className="font-display mt-2 text-5xl text-ink tabular">{cmp.savingCostPct ? <CountUp value={-cmp.savingCostPct.median} format={(x) => signedPct(x)} /> : "n/a"}</p>
               <p className="mt-2 text-sm text-ink-2">median, range {cmp.savingCostPct ? `${signedPct(-cmp.savingCostPct.max)} to ${signedPct(-cmp.savingCostPct.min)}` : "n/a"}; negative means B is cheaper</p>
             </Reveal>
             <Reveal delay={90} className="seam-top pt-5">
@@ -208,7 +219,7 @@ export function Landing({ r, costs, go }: { r: Results; costs: CostParams; go: G
             </Reveal>
             <Reveal delay={180} className="seam-top pt-5">
               <p className="eyebrow">Routing vs nearest-stop</p>
-              <p className="font-display mt-2 text-5xl text-ink tabular">{bv?.improvement.cost ? signedPct(-bv.improvement.cost.median) : "n/a"}</p>
+              <p className="font-display mt-2 text-5xl text-ink tabular">{bv?.improvement.cost ? <CountUp value={-bv.improvement.cost.median} format={(x) => signedPct(x)} /> : "n/a"}</p>
               <p className="mt-2 text-sm text-ink-2">operating cost of optimised routes (Scenario A), median; lower in {bv?.better ?? 0} of {bv?.valid ?? 0} runs</p>
             </Reveal>
           </div>

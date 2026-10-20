@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Badge } from "./components/Badge";
 import { LogoMark, Wordmark } from "./components/Brand";
+import { MotionToggle } from "./components/Motion";
 import { AssumptionsTab } from "./tabs/AssumptionsTab";
 import { CollectionTab } from "./tabs/CollectionTab";
 import { CoverageTab } from "./tabs/CoverageTab";
@@ -137,20 +138,37 @@ export default function App() {
 }
 
 function NavLinks({ tab, go }: { tab: TabId; go: (t: TabId) => void }) {
+  // One ink pill slides to the active link (falls back to a per-link background before it is measured).
+  const wrap = useRef<HTMLDivElement>(null);
+  const [pill, setPill] = useState<{ left: number; width: number } | null>(null);
+  useLayoutEffect(() => {
+    const measure = () => {
+      const el = wrap.current?.querySelector<HTMLElement>('[aria-current="page"]');
+      setPill(el ? { left: el.offsetLeft, width: el.offsetWidth } : null);
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    document.fonts?.ready.then(measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [tab]);
   return (
-    <>
+    <div ref={wrap} className="relative flex items-center gap-1">
+      {pill && (
+        <span aria-hidden className="absolute inset-y-0 rounded-[var(--r-pill)] bg-ink transition-[left,width] duration-[var(--dur-2)] ease-[var(--ease-out)]"
+              style={{ left: pill.left, width: pill.width }} />
+      )}
       {TABS.map((t) => {
         const on = tab === t.id;
         return (
           <a key={t.id} href={`#${t.id}`} aria-current={on ? "page" : undefined} onClick={(e) => { e.preventDefault(); go(t.id); }}
-             className={`group relative whitespace-nowrap rounded-[var(--r-pill)] px-3 py-1.5 text-[13.5px] transition-colors duration-[var(--dur-1)] ${
-               on ? "bg-ink text-page" : "text-ink-2 hover:bg-surface-2 hover:text-ink"}`}>
+             className={`relative z-10 whitespace-nowrap rounded-[var(--r-pill)] px-3 py-1.5 text-[13.5px] transition-colors duration-[var(--dur-2)] ${
+               on ? `text-page ${pill ? "" : "bg-ink"}` : "text-ink-2 hover:bg-surface-2 hover:text-ink"}`}>
             <span className={`mono mr-1.5 text-[10.5px] ${on ? "opacity-70" : "text-muted"}`}>{t.n}</span>{t.pt}
             <span className={`ml-1 hidden lg:inline ${on ? "opacity-70" : "text-muted"}`}>· {t.en}</span>
           </a>
         );
       })}
-    </>
+    </div>
   );
 }
 
@@ -177,9 +195,9 @@ function Dashboard({ r, tab, go, current }: { r: Results; tab: TabId; go: (t: Ta
   const profiles = Object.keys(r.scenarios);
   const [profile, setProfile] = useState(profiles.includes("mid") ? "mid" : profiles[0]);
 
-  if (tab === "inicio") return <Landing r={r} costs={costs} go={go} />;
+  if (tab === "inicio") return <div key="inicio" className="tab-enter"><Landing r={r} costs={costs} go={go} /></div>;
   return (
-    <div className="flex flex-col gap-5 pt-8">
+    <div key={tab} className="tab-enter flex flex-col gap-5 pt-8">
       {current && (
         <div className="grid gap-4 border-b border-line pb-6 md:grid-cols-[1fr_auto] md:items-end">
           <div>
@@ -252,7 +270,7 @@ function Footer({ r }: { r: Results }) {
       <div className="mx-auto grid max-w-[var(--w-content)] gap-6 px-4 py-10 text-sm text-ink-2 md:grid-cols-[1.2fr_1fr_1fr]">
         <div>
           <div className="flex items-center gap-2.5"><LogoMark size={26} /><span className="font-display text-xl text-ink">Retalho</span></div>
-          <p className="mt-3 max-w-[40ch]">Textile collection planning for Guimarães. Built for Hack4Guimarães 2035, Challenge 5: TexVitrus.</p>
+          <p className="mt-3 max-w-[40ch]">Textile collection planning for Guimarães: where drop-off points should be, how to collect them, and every assumption behind the numbers.</p>
         </div>
         <div>
           <p className="eyebrow">These results</p>
@@ -261,6 +279,7 @@ function Footer({ r }: { r: Results }) {
             source commit {r.meta.git_commit}<br />
             {r.meta.seeds.length} runs × {r.meta.horizon_weeks} weeks · {r.meta.data_source} data
           </p>
+          <MotionToggle className="mt-4" />
         </div>
         <div>
           <p className="eyebrow">Data</p>
