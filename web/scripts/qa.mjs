@@ -188,6 +188,40 @@ const hit = await ev(`[...document.querySelectorAll("main button, header a, main
   .map(e => { const r = e.getBoundingClientRect(); const t = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return e === t || e.contains(t); })`);
 check("no animation layer covers visible controls", hit.length > 0 && hit.every(Boolean), `${hit.filter(Boolean).length}/${hit.length}`);
 
+// 9. languages: switch with the header selector; every view is translated and fits at three widths
+const ENGLISH = ["Give every thread a better route", "Explore collection planning", "The collection network", "Where new points should go",
+  "Fixed rounds or collection on demand", "The assumptions behind every number", "Table view", "Collection routes, week by week",
+  "Operating cost", "Every assumption", "Hover a point for details", "Residents covered", "Average weekly fill", "Data sources"];
+const views = ["inicio", "rede", "cobertura", "recolha", "pressupostos"];
+const setLang = (l) => ev(`(() => { const s = [...document.querySelectorAll("header select")].find(x => [...x.options].some(o => o.value === "pt"));
+  s.value = "${l}"; s.dispatchEvent(new Event("change", { bubbles: true })); return true; })()`);
+for (const lang of ["pt", "es", "fr", "de", "it"]) {
+  await setLang(lang); await sleep(600);
+  const leftovers = new Set(), overflow = [];
+  for (const v of views) {
+    await go(v);
+    if (v === "inicio") { await ev(`(async () => { for (let y = 0; y <= document.body.scrollHeight; y += 600) { scrollTo(0, y); await new Promise(r => setTimeout(r, 60)); } scrollTo(0, 0); })()`); }
+    (await ev(`(() => { const t = document.body.innerText; return ${JSON.stringify(ENGLISH)}.filter(s => t.includes(s)); })()`)).forEach((s) => leftovers.add(`${v}: ${s}`));
+    for (const w of [1440, 1024, 390]) {
+      await call("Emulation.setDeviceMetricsOverride", { width: w, height: 900, deviceScaleFactor: 1, mobile: w < 500 }); await sleep(350);
+      const sw = await ev(`document.documentElement.scrollWidth - innerWidth`);
+      if (sw > 0) overflow.push(`${v}@${w}: +${sw}px`);
+      // The page clips sideways overflow, so also check that every header control is fully on screen.
+      const off = await ev(`[...document.querySelectorAll("header select, header > div a")].filter(e => { const r = e.getBoundingClientRect(); return r.width && (r.left < 0 || r.right > innerWidth); }).length`);
+      if (off) overflow.push(`${v}@${w}: ${off} header control(s) off screen`);
+    }
+    await call("Emulation.clearDeviceMetricsOverride");
+  }
+  await go("inicio");
+  const meta = await ev(`({ lang: document.documentElement.lang, h1: document.querySelector("h1")?.textContent })`);
+  check(`language ${lang}: views translated, no overflow at 1440/1024/390`, meta.lang === lang && meta.h1 !== "Give every thread a better route." && !leftovers.size && !overflow.length,
+    `${meta.h1}${leftovers.size ? "; English left: " + [...leftovers].join(" | ") : ""}${overflow.length ? "; overflow: " + overflow.join(", ") : ""}`);
+}
+await call("Page.reload"); await sleep(2500); await installQa();
+check("language choice survives a reload", (await ev(`document.documentElement.lang`)) === "it");
+await setLang("en"); await sleep(600);
+check("switch back to English", (await ev(`qa.text("h1")`)) === "Give every thread a better route." && (await ev(`document.documentElement.lang`)) === "en");
+
 console.log(results.join("\n"));
 console.log(`\nconsole/page errors: ${errors.length}${errors.length ? "\n  " + errors.join("\n  ") : ""}`);
 console.log(`failed requests: ${failed.length}${failed.length ? "\n  " + [...new Set(failed)].join("\n  ") : ""}`);

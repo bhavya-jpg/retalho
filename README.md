@@ -124,6 +124,7 @@ All of these are implemented and tested.
 - **Continuous, purposeful motion** (see [Design](#design)).
 - **Light and dark themes,** responsive from 360 px phones to wide desktops, with no horizontal scrolling.
 - **A single-file offline build** for presentations, with data and fonts embedded.
+- **Six interface languages:** English, Português, Español, Français, Deutsch and Italiano. Pick one in the header (on phones it shows the language code), or link with `?lang=pt`. The choice is remembered in the browser. Numbers, euros and dates follow the language.
 
 ## Screenshots
 
@@ -384,15 +385,20 @@ make web
 - [config/benchmarks.yaml](config/benchmarks.yaml): external benchmarks, listed only once their source has been read (currently none).
 - The frontend needs no configuration. Vite builds with `base: "./"`.
 
+**Languages**
+- Strings live in [web/src/i18n/](web/src/i18n/): `en.ts` is the source, and each language is one file with exactly the same keys. TypeScript rejects a missing or extra key. A Vitest test also checks that every translation keeps the same `{placeholders}` and `<b>`/`<em>` markup as English.
+- Text that comes from the data files (parameter names, units, notes, source names) is translated by matching the original English text. A note that changes in the data, for example a note supplied by VITRUS, is shown as written rather than with a stale translation.
+- To add a language, copy `en.ts`, translate the values, and register it in `LANGS` and `DICTS` in [web/src/lib/i18n.tsx](web/src/lib/i18n.tsx).
+
 ## Testing and quality assurance
 
 ```sh
 make test                                        # pytest: 152 tests
 cd web && npx tsc -b                             # type-check
-cd web && npm test                               # Vitest: 39 tests in 4 files
+cd web && npm test                               # Vitest: 55 tests in 5 files
 cd web && npm run build && npx vite preview --port 4173 &
 cd web && npm run smoke                          # 6 interaction checks in headless Chrome
-cd web && npm run qa -- https://bhavya-jpg.github.io/retalho/   # 38-check QA pass (EXPECT_COMMIT=<sha> pins provenance)
+cd web && npm run qa -- https://bhavya-jpg.github.io/retalho/   # 46-check QA pass (EXPECT_COMMIT=<sha> pins provenance)
 ```
 
 **What the automated tests cover**
@@ -403,7 +409,7 @@ cd web && npm run qa -- https://bhavya-jpg.github.io/retalho/   # 38-check QA pa
   - benchmark edge cases (identical, better, worse, zero baseline)
   - street-geometry fallbacks, the export schema and staleness checks
   - the provenance label and the VITRUS readiness path
-- **TypeScript:** cost parity with Python, route-drawing fallbacks, the benchmark maths, and the map and weave helpers.
+- **TypeScript:** cost parity with Python, route-drawing fallbacks, the benchmark maths, the map and weave helpers, and the translations (same keys, placeholders and markup in every language).
 - **Smoke test:**
   - the €/km slider updates costs within 100 ms
   - the A/B and week toggles redraw routes
@@ -414,12 +420,14 @@ cd web && npm run qa -- https://bhavya-jpg.github.io/retalho/   # 38-check QA pa
 
 | Check | Result |
 |---|---|
-| CI commands (`uv sync --frozen`, solver check, pytest, `npm ci`, `tsc -b`, Vitest, build) | All passed: 152 + 39 tests |
-| [web/scripts/qa.mjs](web/scripts/qa.mjs), 38 checks: base path, JSON loading and provenance, every tab and refresh, both datasets, coverage at +0/+5/+15, all profiles, both strategies × 4 weeks × 2 runs, tooltips, stop selection, street routes, benchmark values and disclaimer, chart and table values, cost slider and reset, controls not covered by animation | 38 / 38, locally and live |
+| CI commands (`uv sync --frozen`, solver check, pytest, `npm ci`, `tsc -b`, Vitest, build) | All passed: 152 + 55 tests |
+| [web/scripts/qa.mjs](web/scripts/qa.mjs), 46 checks: base path, JSON loading and provenance, every tab and refresh, both datasets, coverage at +0/+5/+15, all profiles, both strategies × 4 weeks × 2 runs, tooltips, stop selection, street routes, benchmark values and disclaimer, chart and table values, cost slider and reset, controls not covered by animation, every animated block ends visible, and each of the five other languages on all 5 views at 1440 / 1024 / 390 px (no English left, no overflow, header controls on screen) plus language persistence | 46 / 46 locally, in 3 consecutive runs |
 | Console errors, page exceptions, failed requests, HTTP ≥ 400 | 0 / 0 / 0 / 0 |
 | Horizontal overflow, 5 views × 1440 / 1280 / 1024 / 900 / 768 / 390 / 360 px | None. A 3 px overflow found at 1024 px was fixed in this pass. |
 | axe-core, 5 views × light and dark | No violations |
 | Secrets scan of all tracked files | None found |
+| Hidden diagrams (found 20 Oct 2026) | The landing page's textile-journey and pipeline diagrams stayed invisible: their steps waited for a reveal class that was set on the parent instead. Fixed, and the QA pass now fails if any animated block stays hidden. |
+| Map exception on fast view changes | Removing a map during a resize-triggered zoom animation threw inside Leaflet. Map refits no longer animate, and the map stops before it is removed; 0 errors in 3 runs afterwards. |
 | Routing determinism | A CI run returned the same routes assigned to identical trucks in a different order, failing the same-seed test. Routes are now put in a canonical order. Regenerating both datasets changed only truck-day numbering (no route, distance, time or cost); no failures in 44 repeated runs afterwards. |
 
 The QA and overflow scripts compare what is displayed with values recomputed independently from the JSON, rather than with the app's own code.
@@ -454,7 +462,8 @@ out/           results.json and source reports (generated)
 web/
   src/tabs/        Landing, Network, Coverage, Collection, Benchmark, Assumptions
   src/components/  Brand, Textile, HeroWeave, Diagrams, Motion, MapView, StatTile, Badge
-  src/lib/         cost, benchmark, routes, polyline, geo, weave, motion, stats, format, tokens
+  src/lib/         cost, benchmark, routes, polyline, geo, weave, motion, stats, format, tokens, i18n
+  src/i18n/        en (source), pt, es, fr, de, it
   public/          results JSON per dataset, datasets.json, favicon.svg
   scripts/         smoke.mjs, qa.mjs, offline.mjs
 docs/          DESIGN_RESEARCH.md, VITRUS_DATA.md, screenshots/
