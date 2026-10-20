@@ -1,0 +1,153 @@
+// Original diagrams in the Retalho textile language. Data-driven where the data exists (WeaveGrid);
+// otherwise explicitly conceptual and labelled as such.
+import { useReveal } from "../lib/motion";
+import type { Weave } from "../lib/weave";
+
+/** The collection weave: rows are containers, columns are weeks; a weft float is a collection. */
+export function WeaveGrid({ weave, order, colour, label, compact = false, highlightWeek, highlightId }: {
+  weave: Weave; order: string[]; colour: string; label: string; compact?: boolean; highlightWeek?: number; highlightId?: string | null;
+}) {
+  const { ref, cls } = useReveal<SVGSVGElement>(0.15);
+  const rowH = compact ? 9 : 12, colW = compact ? 38 : 52, padL = compact ? 4 : 54, padT = 20;
+  const rows = order.map((id) => weave.ids.indexOf(id));
+  const w = padL + weave.weeks.length * colW + 4;
+  const h = padT + rows.length * rowH + 4;
+  return (
+    <figure className="m-0">
+      <svg ref={ref} viewBox={`0 0 ${w} ${h}`} className={`h-auto w-full ${cls}`} role="img"
+           aria-label={`${label}: ${weave.collections} collections of ${weave.ids.length} containers over ${weave.weeks.length} weeks.`}>
+        {highlightWeek !== undefined && weave.weeks.indexOf(highlightWeek) >= 0 && (
+          <rect x={padL + weave.weeks.indexOf(highlightWeek) * colW} y={padT - 4} width={colW} height={h - padT} rx="4"
+                fill="var(--surface-2)" stroke="var(--border-strong)" strokeWidth="1" />
+        )}
+        {highlightId && order.indexOf(highlightId) >= 0 && (
+          <rect x={padL - 2} y={padT + order.indexOf(highlightId) * rowH} width={weave.weeks.length * colW + 4} height={rowH} rx="3"
+                fill="none" stroke="var(--ink)" strokeWidth="1.2" />
+        )}
+        {weave.weeks.map((wk, c) => (
+          <text key={wk} x={padL + c * colW + colW / 2} y={12} textAnchor="middle" fontSize="10" fill="var(--muted)"
+                fontFamily="var(--font-mono)">W{wk}</text>
+        ))}
+        {/* warp: the bare threads */}
+        {weave.weeks.map((_, c) => [0.25, 0.5, 0.75].map((f) => (
+          <line key={`${c}-${f}`} x1={padL + c * colW + colW * f} y1={padT - 2} x2={padL + c * colW + colW * f} y2={h - 4}
+                stroke="var(--flax)" strokeWidth="1.4" />
+        )))}
+        {rows.map((ri, r) => (
+          <g key={order[r]}>
+            {!compact && (
+              <text x={padL - 6} y={padT + r * rowH + rowH * 0.72} textAnchor="end" fontSize="8.5" fill="var(--muted)" fontFamily="var(--font-mono)">
+                {order[r].replace(/^OSM-/, "").slice(-8)}
+              </text>
+            )}
+            {weave.cells[ri].map((on, c) => on && (
+              <rect key={c} x={padL + c * colW + 3} y={padT + r * rowH + 1.5} width={colW - 6} height={rowH - 3} rx={(rowH - 3) / 2}
+                    fill={colour} className="pop" style={{ ["--pop-delay" as string]: `${c * 120 + r * 12}ms` }}>
+                <title>{`${order[r]}: collected in week ${weave.weeks[c]}`}</title>
+              </rect>
+            ))}
+          </g>
+        ))}
+      </svg>
+      <figcaption className="mt-2 flex items-baseline justify-between gap-3 text-xs text-ink-2">
+        <span>{label}</span>
+        <span className="mono tabular text-ink">{weave.collections} collections</span>
+      </figcaption>
+    </figure>
+  );
+}
+
+/** Conceptual journey of a textile, with the part Retalho plans marked. Not a data view. */
+export function JourneyDiagram() {
+  const { ref, cls } = useReveal<HTMLOListElement>(0.2);
+  const steps = [
+    { t: "Drop-off", d: "A resident leaves textiles at a point", ours: false },
+    { t: "Collection point", d: "Where points are, and who can reach them", ours: true },
+    { t: "Collection route", d: "When each point is emptied, in what order", ours: true },
+    { t: "Handling", d: "Sorting and grading by the operator", ours: false },
+    { t: "Next destination", d: "Reuse, resale or recycling", ours: false },
+  ];
+  return (
+    <div>
+      <ol ref={ref} className={`grid grid-cols-1 gap-3 sm:grid-cols-5 sm:gap-0 ${cls}`} aria-label="Conceptual textile journey">
+        {steps.map((s, i) => (
+          <li key={s.t} className="reveal relative sm:pr-4" style={{ ["--reveal-delay" as string]: `${i * 90}ms` }}>
+            <div className="flex items-center gap-2">
+              <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full border text-[11px] mono ${s.ours
+                ? "border-transparent bg-accent text-on-accent" : "border-line-strong text-muted"}`}>{i + 1}</span>
+              {i < steps.length - 1 && <span className="hidden h-px flex-1 bg-[var(--border-strong)] sm:block" aria-hidden />}
+            </div>
+            <p className={`mt-3 font-medium ${s.ours ? "text-ink" : "text-ink-2"}`}>{s.t}</p>
+            <p className="mt-1 text-sm text-muted">{s.d}</p>
+          </li>
+        ))}
+      </ol>
+      <div className="mt-5 grid grid-cols-1 gap-3 text-xs sm:grid-cols-5">
+        <span className="hidden sm:block" />
+        <span className="seam col-span-1 rounded-[var(--r-sm)] px-3 py-2 text-ink-2 sm:col-span-2">
+          <b className="text-ink">Retalho plans these two steps.</b> It does not collect, sort or recycle textiles.
+        </span>
+        <span className="text-muted sm:col-span-2">Steps 1, 4 and 5 are carried out by residents and the operator, outside this tool.</span>
+      </div>
+    </div>
+  );
+}
+
+/** Real pipeline stages, from inputs to this page. */
+export function PipelineDiagram() {
+  const cols = [
+    { h: "Inputs", items: ["OpenStreetMap roads", "OSM recycling points", "INE Census 2021", "assumptions.yaml"] },
+    { h: "Pipeline (Python)", items: ["Road distances · OSRM", "Coverage · spopt MCLP", "4 weeks × 10 runs · VROOM", "Nearest-stop benchmark", "Street geometry · OSRM"] },
+    { h: "Static results", items: ["results-<source>.json", "schema-checked, labelled"] },
+    { h: "This app", items: ["Maps, tables, charts", "€ recomputed in the browser"] },
+  ];
+  const { ref, cls } = useReveal<HTMLDivElement>(0.2);
+  return (
+    <div ref={ref} className={`grid grid-cols-1 gap-4 md:grid-cols-4 md:gap-0 ${cls}`} role="group" aria-label="How inputs become a collection plan">
+      {cols.map((c, i) => (
+        <div key={c.h} className="reveal relative md:pr-6" style={{ ["--reveal-delay" as string]: `${i * 110}ms` }}>
+          <p className="eyebrow">{String(i + 1).padStart(2, "0")} · {c.h}</p>
+          <ul className="mt-3 flex flex-col gap-1.5">
+            {c.items.map((x) => (
+              <li key={x} className="rounded-[var(--r-sm)] border border-line bg-surface px-3 py-1.5 text-[13px] text-ink">{x}</li>
+            ))}
+          </ul>
+          {i < cols.length - 1 && (
+            <svg className="absolute right-0 top-9 hidden h-4 w-6 md:block" viewBox="0 0 24 16" aria-hidden>
+              <path d="M2 8 C 8 2, 14 14, 20 8" fill="none" stroke="var(--terracotta)" strokeWidth="1.6" className="thread-draw" pathLength={1} />
+              <path d="M17 5l4 3-4 3" fill="none" stroke="var(--terracotta)" strokeWidth="1.6" />
+            </svg>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Concept: identical stops and limits, two visiting orders. Labelled as an illustration. */
+export function OrderDiagram() {
+  const pts: [number, number][] = [[40, 90], [92, 40], [150, 70], [118, 128], [190, 30], [236, 104], [200, 150]];
+  const depot: [number, number] = [20, 150];
+  const nn = [depot, pts[0], pts[3], pts[2], pts[1], pts[4], pts[5], pts[6], depot];
+  const opt = [depot, pts[0], pts[1], pts[4], pts[2], pts[5], pts[6], pts[3], depot];
+  const d = (seq: [number, number][]) => seq.map(([x, y], i) => `${i ? "L" : "M"}${x} ${y}`).join("");
+  const { ref, cls } = useReveal<SVGSVGElement>(0.2);
+  const panel = (seq: [number, number][], colour: string, title: string, dx: number) => (
+    <g transform={`translate(${dx} 0)`}>
+      <text x="0" y="14" fontSize="11" fontFamily="var(--font-mono)" fill="var(--muted)">{title}</text>
+      <path d={d(seq)} fill="none" stroke={colour} strokeWidth="2" strokeLinejoin="round" className="thread-draw" pathLength={1} />
+      {pts.map(([x, y], i) => <circle key={i} cx={x} cy={y} r="5" fill="var(--surface)" stroke="var(--ink)" strokeWidth="1.6" />)}
+      <rect x={depot[0] - 6} y={depot[1] - 6} width="12" height="12" rx="2" fill="var(--ink)" />
+    </g>
+  );
+  return (
+    <figure className="m-0">
+      <svg ref={ref} viewBox="0 0 540 170" className={`h-auto w-full ${cls}`} role="img"
+           aria-label="Illustration: the same seven stops and depot visited in two orders, nearest-stop first and optimised.">
+        {panel(nn, "var(--baseline)", "NEAREST STOP FIRST", 0)}
+        {panel(opt, "var(--accent)", "OPTIMISED ORDER", 280)}
+      </svg>
+      <figcaption className="mt-2 text-xs text-muted">Illustration, not data. Same stops, loads, trucks and costs; only the visiting order and the split into truck-days change.</figcaption>
+    </figure>
+  );
+}
