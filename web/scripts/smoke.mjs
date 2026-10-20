@@ -2,22 +2,31 @@
 // Usage: npm run build && npx vite preview --port 4173 & npm run smoke
 // CHROME=/path/to/chrome and BASE=http://host:port/ override the defaults.
 import { spawn } from "node:child_process";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 const base = process.env.BASE ?? "http://localhost:4173/";
+// CI runners (Ubuntu 24.04) cannot use Chrome's sandbox, so it is disabled there only.
+const ciFlags = process.env.CI ? ["--no-sandbox", "--disable-dev-shm-usage"] : [];
 const chrome = spawn(process.env.CHROME ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-  ["--headless=new", "--remote-debugging-port=9334", "--window-size=1440,1000", `--user-data-dir=${process.env.TMPDIR}/cdpi${Date.now()}`, base + "#pressupostos"]);
+  ["--headless=new", "--remote-debugging-port=9334", "--window-size=1440,1000", ...ciFlags,
+   `--user-data-dir=${join(tmpdir(), `retalho-smoke-${Date.now()}`)}`, base + "#pressupostos"]);
+chrome.on("error", (e) => { console.error(`Could not start Chrome (${e.message}); set CHROME=/path/to/chrome`); process.exit(1); });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 let ws;
-for (let i = 0; i < 40 && !ws; i++) { await sleep(250); try { const t = await (await fetch("http://127.0.0.1:9334/json")).json(); const p = t.find((x) => x.type === "page"); if (p) ws = new WebSocket(p.webSocketDebuggerUrl); } catch {} }
+for (let i = 0; i < 80 && !ws; i++) { await sleep(250); try { const t = await (await fetch("http://127.0.0.1:9334/json")).json(); const p = t.find((x) => x.type === "page"); if (p) ws = new WebSocket(p.webSocketDebuggerUrl); } catch {} }
+if (!ws) { console.error("Chrome did not expose a debugging target"); chrome.kill(); process.exit(1); }
 await new Promise((r) => (ws.onopen = r));
 let id = 1; const pending = new Map();
 ws.onmessage = (m) => { const d = JSON.parse(m.data); pending.get(d.id)?.(d.result); };
 const call = (method, params = {}) => new Promise((r) => { const i = id++; pending.set(i, r); ws.send(JSON.stringify({ id: i, method, params })); });
 const ev = async (expression) => (await call("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true })).result.value;
-const go = async (hash) => { await ev(`location.hash = "${hash}"; location.reload()`); await sleep(2500); };
+const go = async (hash) => { await ev(`location.hash = "${hash}"; location.reload()`); await sleep(500); await ready(); await sleep(300); };
 const results = [];
 const check = (name, ok, detail) => results.push(`${ok ? "PASS" : "FAIL"}  ${name}  ${detail}`);
 
-await sleep(2500);
+// Wait until the dashboard has rendered (results loaded), not a fixed delay: CI and the live site are slower.
+const ready = async () => { for (let i = 0; i < 60; i++) { if (await ev(`!!document.querySelector("[data-stat]")`)) return true; await sleep(250); } return false; };
+if (!(await ready())) { console.log(`FAIL  app rendered  no dashboard at ${base} (check results.json and assets)`); chrome.kill(); process.exit(1); }
 // M10: cost slider -> every € figure updates within 100 ms
 const r1 = await ev(`(async () => {
   const tile = document.querySelector('[data-stat="A · four-week cost (median)"] [data-value]');

@@ -179,9 +179,30 @@ External benchmarks go in [config/benchmarks.yaml](config/benchmarks.yaml) only 
 
 ## Deployment
 
-- **Static site:** `make web-build` produces `web/dist/` with relative paths. Upload that folder to any static host (GitHub Pages, Netlify drop, any web server). The base map needs internet; everything else is in the folder.
+**Live site:** https://bhavya-jpg.github.io/retalho/. It is published automatically by [.github/workflows/ci.yml](.github/workflows/ci.yml).
+
+| Job | Runs on | What it checks |
+|---|---|---|
+| `pipeline` | every push and PR | `uv sync --frozen`, the solver check (`check_env`), and the full pytest suite |
+| `web` | every push and PR | `npm ci`, `tsc -b`, vitest, `npm run build`, and a headless-Chrome smoke test of the built site |
+| `deploy` | `main` only, after both jobs pass | uploads `web/dist` and deploys it with `actions/deploy-pages` |
+| `verify` | after `deploy` | re-runs the smoke test against the live URL |
+
+A failing check stops the run, so a broken build is never deployed. No secrets are needed: the deploy uses the built-in `GITHUB_TOKEN` with `pages: write` and `id-token: write`, granted to that job only.
+
+**One-time repository setting:** Settings → Pages → Source: **GitHub Actions**. It is already enabled for `bhavya-jpg/retalho`. On a fork or a renamed repository, enable it again.
+
+**Why it works under `/retalho/`:**
+- Vite builds with `base: "./"`, so every asset and data file is requested relative to the page. The same build works at any sub-path and from disk.
+- Tabs are URL fragments (`#rede`, `#recolha`), so refreshing any tab never hits a missing server route.
+- The site is fully static. The results JSON is committed under `web/public/` and regenerated with `make all`.
+
+**Other targets:**
 - **Pitch laptop:** `make offline` produces `web/dist-offline/retalho-offline.html` (about 1.4 MB). It opens by double-click with no server and no network, with both datasets embedded; the map falls back to a plain background.
+- **Any static host:** upload `web/dist/` after `make web-build`.
 - **Projector:** the layout was checked at 1920×1080, 1440 px and 390 px wide.
+
+**Linting:** no linter is configured in this project. CI runs the type-checker and both test suites instead.
 
 ## Repository layout
 

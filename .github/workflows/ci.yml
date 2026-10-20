@@ -1,0 +1,106 @@
+# Tests every push and pull request; on main, deploys the static dashboard to GitHub Pages
+# only after every check has passed, then smoke-tests the live site.
+# Repository setting required once: Settings -> Pages -> Source: "GitHub Actions". No secrets needed.
+name: CI and Pages
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  # Cancel superseded PR runs, but never cancel a run on main that may be deploying.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  pipeline:
+    name: Python pipeline tests
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+        with:
+          python-version: "3.13"
+          enable-cache: true
+      - name: Install locked dependencies
+        run: uv sync --frozen
+      - name: Check toolchain (VROOM and CBC solvers run)
+        run: uv run python -m pipeline.check_env
+      - name: Run pytest (data validation, matrix, routing, simulation, cost, coverage, export)
+        run: uv run pytest -q
+
+  web:
+    name: Web type-check, tests, build and smoke test
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Type-check
+        run: npx tsc -b
+      - name: Unit tests (cost parity with Python, routing, benchmark)
+        run: npm test
+      - name: Production build
+        run: npm run build
+      - name: Smoke-test the built site in headless Chrome
+        env:
+          CI: "true"
+        run: |
+          npx vite preview --port 4173 --strictPort &
+          for i in $(seq 1 60); do curl -sf http://localhost:4173/ >/dev/null && break; sleep 1; done
+          CHROME="$(command -v google-chrome || command -v chromium)" npm run smoke
+      - name: Upload Pages artifact
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: web/dist
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: [pipeline, web]
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
+
+  verify:
+    name: Smoke-test the live site
+    needs: deploy
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Run the smoke test against the published URL
+        env:
+          CI: "true"
+          BASE: ${{ needs.deploy.outputs.page_url }}
+        run: |
+          for i in $(seq 1 30); do curl -sf "$BASE" >/dev/null && break; sleep 5; done
+          CHROME="$(command -v google-chrome || command -v chromium)" node web/scripts/smoke.mjs
