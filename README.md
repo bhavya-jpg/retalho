@@ -421,7 +421,7 @@ cd web && npm run qa -- https://bhavya-jpg.github.io/retalho/   # 46-check QA pa
 | Check | Result |
 |---|---|
 | CI commands (`uv sync --frozen`, solver check, pytest, `npm ci`, `tsc -b`, Vitest, build) | All passed: 153 + 55 tests |
-| [web/scripts/qa.mjs](web/scripts/qa.mjs), 46 checks: base path, JSON loading and provenance, every tab and refresh, both datasets, coverage at +0/+5/+15, all profiles, both strategies × 4 weeks × 2 runs, tooltips, stop selection, street routes, benchmark values and disclaimer, chart and table values, cost slider and reset, controls not covered by animation, every animated block ends visible, and each of the five other languages on all 5 views at 1440 / 1024 / 390 px (no English left, no overflow, header controls on screen) plus language persistence | 46 / 46 locally, in 3 consecutive runs |
+| [web/scripts/qa.mjs](web/scripts/qa.mjs), 46 checks: base path, JSON loading and provenance, every tab and refresh, both datasets, coverage at +0/+5/+15, all profiles, both strategies × 4 weeks × 2 runs, tooltips, stop selection, street routes, benchmark values and disclaimer, chart and table values, cost slider and reset, controls not covered by animation, every animated block ends visible, and each of the five other languages on all 5 views at 1440 / 1024 / 390 px (no English left, no overflow, header controls on screen) plus language persistence | 46 / 46 locally (3 consecutive runs) and on the live site |
 | Console errors, page exceptions, failed requests, HTTP ≥ 400 | 0 / 0 / 0 / 0 |
 | Horizontal overflow, 5 views × 1440 / 1280 / 1024 / 900 / 768 / 390 / 360 px | None. A 3 px overflow found at 1024 px was fixed in this pass. |
 | axe-core, 5 views × light and dark | No violations |
